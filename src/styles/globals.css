@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Smokin' Hot Global Styles - Rock & Roll meets E-commerce */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+:root {
+  /* 60-30-10 Color System Variables */
+  --color-primary-base: #0b0b0d;
+  --color-surface: #111113;
+  --color-fire: #e52421;
+  --color-ember: #ff6a00;
+  --color-warning: #ffd400;
+  --color-mild: #98b83c;
+  
+  /* Brand gradients */
+  --gradient-heat: linear-gradient(135deg, var(--color-fire) 0%, var(--color-ember) 100%);
+  --gradient-mild: linear-gradient(135deg, var(--color-mild) 0%, #84cc16 100%);
+  --gradient-warning: linear-gradient(135deg, var(--color-warning) 0%, #facc15 100%);
+  
+  /* Shadows */
+  --shadow-heat: 0 0 30px rgba(229, 36, 33, 0.3);
+  --shadow-ember: 0 0 25px rgba(255, 106, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(255, 212, 0, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-primary-base);
+  color: #f6f1e7;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-image: 
+    radial-gradient(circle at top right, rgba(255, 89, 0, 0.12), transparent 30%),
+    radial-gradient(circle at left, rgba(229, 36, 33, 0.15), transparent 28%),
+    linear-gradient(to bottom, #0b0b0d, #111113);
+  background-attachment: fixed;
+}
+
+/* Typography Hierarchy - 60-30-10 Rule */
+
+/* 60% - Clean, readable body text (default) */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* 30% - Display typography for section headings */
+.font-display {
+  font-family: 'Bebas Neue', 'Arial Black', sans-serif;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+}
+
+/* 10% - Aggressive "rock and roll" type (use sparingly) */
+.text-aggressive {
+  font-family: 'Bebas Neue', 'Arial Black', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  line-height: 0.8;
+}
+
+/* Reset default heading styles - let classes control typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}
+
+/* Brand Components */
+.btn-primary {
+  @apply inline-flex items-center justify-center;
+  @apply border-2 border-black bg-fire-500 text-white;
+  @apply px-6 py-3 text-sm font-black uppercase tracking-wider;
+  @apply shadow-[4px_4px_0_0_#000] transition-all duration-200;
+  @apply hover:-translate-y-1 hover:bg-fire-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-fire-500 focus:ring-offset-2;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center;
+  @apply border-2 border-warning-400 bg-transparent text-warning-400;
+  @apply px-6 py-3 text-sm font-black uppercase tracking-wider;
+  @apply transition-all duration-200;
+  @apply hover:-translate-y-1 hover:bg-warning-400 hover:text-black;
+  @apply focus:outline-none focus:ring-2 focus:ring-warning-400 focus:ring-offset-2;
+}
+
+.heat-badge {
+  @apply rounded-full border border-white/20 bg-white/10;
+  @apply px-3 py-1 text-xs font-black uppercase tracking-wider;
+  @apply backdrop-blur-sm;
+}
+
+.product-card {
+  @apply relative overflow-hidden rounded-3xl;
+  @apply border border-white/10 bg-surface;
+  @apply transition-all duration-300;
+  @apply hover:scale-105 hover:shadow-2xl;
+}
+
+.sticker-badge {
+  @apply border-2 border-black px-4 py-2;
+  @apply text-xs font-black uppercase tracking-wider;
+  @apply shadow-[4px_4px_0_0_#000] rotate-6;
+  @apply transform transition-transform hover:rotate-12;
+}
+
+/* Heat Level Indicators */
+.heat-mild {
+  @apply from-mild-400 to-mild-600;
+  box-shadow: 0 0 20px rgba(152, 184, 60, 0.3);
+}
+
+.heat-hot {
+  @apply from-ember-400 to-ember-600;
+  box-shadow: 0 0 20px rgba(255, 106, 0, 0.4);
+}
+
+.heat-extra {
+  @apply from-fire-400 to-fire-600;
+  box-shadow: 0 0 20px rgba(229, 36, 33, 0.5);
+}
+
+.heat-smokin {
+  @apply from-amber-700 to-red-900;
+  box-shadow: 0 0 30px rgba(127, 29, 29, 0.6);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(229, 36, 33, 0.4);
+    filter: brightness(1);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(229, 36, 33, 0.8);
+    filter: brightness(1.1);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+  position: relative;
+}
+
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.03;
+  background-image: 
+    radial-gradient(circle at 25px 25px, rgba(255,255,255,0.2) 2%, transparent 0%),
+    radial-gradient(circle at 75px 75px, rgba(255,255,255,0.1) 1%, transparent 0%);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+/* Serbian Language Support */
+.serbian-text {
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(229, 36, 33, 0.7);
+  color: white;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-fire);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ember);
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary {
+    @apply px-4 py-2 text-xs;
+  }
+  
+  .sticker-badge {
+    @apply px-3 py-1 text-xs rotate-3;
+  }
+  
+  h1 { font-size: clamp(2rem, 8vw, 4rem); }
+  h2 { font-size: clamp(1.5rem, 6vw, 3rem); }
+  h3 { font-size: clamp(1.25rem, 5vw, 2rem); }
+}
+
+/* Dark mode compatibility (already dark, but preparing for future) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--color-primary-base);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    border-color: #ffffff;
+  }
+  
+  .heat-badge {
+    border-color: #ffffff;
+  }
+}

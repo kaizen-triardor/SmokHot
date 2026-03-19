@@ -1,0 +1,127 @@
+// Smokin' Hot CMS Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Product Management
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  blurb       String   // Short marketing description
+  heatLevel   String   // 'mild', 'hot', 'extra-hot', 'smokin-hot'
+  heatNumber  Int      // 1-4 scale
+  price       Int      // In RSD (as cents for precision)
+  originalPrice Int?   // For sale pricing
+  
+  // Images (stored as JSON paths)
+  mainImage     String?
+  galleryImages String? // JSON array of paths
+  thumbnail     String?
+  
+  // Product Details
+  ingredients   String? // JSON array
+  volume        String  @default("150ml")
+  scoville      Int?
+  pairings      String? // JSON array of food recommendations
+  
+  // Inventory
+  inStock     Boolean @default(true)
+  stockCount  Int     @default(0)
+  featured    Boolean @default(false)
+  
+  // Categories
+  categories  String? // JSON array
+  
+  // Nutrition (optional)
+  calories    Int?
+  fat         Float?
+  carbs       Float?
+  protein     Float?
+  sodium      Int?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+// Content Management
+model Content {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., 'hero_title', 'about_text', 'contact_info'
+  title     String   // Human-readable name
+  content   String   // The actual content (text/HTML/JSON)
+  type      String   // 'text', 'html', 'json', 'image'
+  section   String   // 'hero', 'about', 'contact', 'global'
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("content")
+}
+
+// Order Management (COD focused)
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique // Human-readable order ID
+  
+  // Customer Info
+  customerName    String
+  customerPhone   String
+  customerAddress String
+  notes           String?
+  
+  // Order Details
+  items       String  // JSON array of ordered items
+  totalAmount Int     // Total in RSD (as cents)
+  
+  // Status Management
+  status      String  @default("pending") // 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'
+  
+  // Delivery Info
+  shippingCost    Int @default(0)
+  estimatedDelivery DateTime?
+  trackingNumber  String?
+  
+  // Internal Notes
+  adminNotes  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+// Admin User Management
+model Admin {
+  id       String @id @default(cuid())
+  email    String @unique
+  name     String
+  password String // Hashed with bcrypt
+  role     String @default("admin") // 'admin', 'super_admin'
+  active   Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
+
+// Settings Management
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String // JSON for complex settings
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
