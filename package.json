@@ -24,6 +24,7 @@
     "@heroicons/react": "^2.2.0",
     "@next/font": "^14.2.0",
     "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.104.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.0.0",
