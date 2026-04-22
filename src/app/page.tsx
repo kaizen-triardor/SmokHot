@@ -319,10 +319,16 @@ export default function HomePage() {
                     <h3 className="text-2xl font-black uppercase">{product.name}</h3>
                     <p className="mt-3 text-sm leading-6 text-white/72">{product.blurb}</p>
 
-                    {/* Scoville Rating */}
-                    <div className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-white/48">
-                      {product.scoville}
-                    </div>
+                    {/* Scoville Rating / Volume fallback */}
+                    {product.scoville && product.scoville !== 'N/A' ? (
+                      <div className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-white/48">
+                        {product.scoville} SHU
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-xs font-bold uppercase tracking-[0.18em] text-white/48">
+                        106 ml
+                      </div>
+                    )}
 
                     {/* Price & Add to Cart */}
                     <div className="mt-6 flex items-center justify-between">

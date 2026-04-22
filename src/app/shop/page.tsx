@@ -171,14 +171,16 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
         <p className="text-sm text-white/70">{product.blurb}</p>
       </div>
 
-      {/* Heat & Scoville */}
+      {/* Heat & Volume */}
       <div className="mb-4 flex items-center gap-4 text-xs">
         <span className={`${heatConf.color} rounded-full px-3 py-1 font-bold text-white`}>
           {heatConf.name}
         </span>
-        <span className="text-white/50">
-          {product.scoville?.toLocaleString()} SHU
-        </span>
+        {product.scoville ? (
+          <span className="text-white/50">{product.scoville.toLocaleString()} SHU</span>
+        ) : product.volume ? (
+          <span className="text-white/50">{product.volume}</span>
+        ) : null}
       </div>
 
       {/* Price */}

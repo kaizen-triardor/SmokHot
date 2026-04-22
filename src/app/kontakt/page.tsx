@@ -132,7 +132,11 @@ export default function KontaktPage() {
                     </div>
                     <div>
                       <h3 className="mb-1 font-bold text-white">Email</h3>
-                      <p className="text-white/70">info@smokinhot.rs</p>
+                      <p className="text-white/70">
+                        <a href="mailto:smokinhotcollective@gmail.com" className="transition hover:text-white">
+                          smokinhotcollective@gmail.com
+                        </a>
+                      </p>
                       <p className="text-sm text-white/50">Odgovaramo u roku od 24h</p>
                     </div>
                   </div>
@@ -143,8 +147,12 @@ export default function KontaktPage() {
                     </div>
                     <div>
                       <h3 className="mb-1 font-bold text-white">Telefon</h3>
-                      <p className="text-white/70">+381 60 123 4567</p>
-                      <p className="text-sm text-white/50">Ponedeljak - Petak: 9:00 - 17:00</p>
+                      <p className="text-white/70">
+                        <a href="tel:+381636445599" className="transition hover:text-white">
+                          +381 63 644 599
+                        </a>
+                      </p>
+                      <p className="text-sm text-white/50">Poziv / Viber / WhatsApp</p>
                     </div>
                   </div>
 
@@ -155,10 +163,9 @@ export default function KontaktPage() {
                     <div>
                       <h3 className="mb-1 font-bold text-white">Adresa</h3>
                       <p className="text-white/70">
-                        Bulevar Oslobođenja 123<br />
+                        Srednjokrajska 23D, Barajevo<br />
                         11000 Beograd, Srbija
                       </p>
-                      <p className="text-sm text-white/50">Ponedeljak - Petak: 10:00 - 18:00</p>
                     </div>
                   </div>
 
@@ -169,11 +176,46 @@ export default function KontaktPage() {
                     <div>
                       <h3 className="mb-1 font-bold text-white">Radno vreme</h3>
                       <div className="space-y-1 text-white/70">
-                        <p>Ponedeljak - Petak: 9:00 - 17:00</p>
-                        <p>Subota: 10:00 - 15:00</p>
-                        <p>Nedelja: Zatvoreno</p>
+                        <p>Non-stop, 7 dana u nedelji</p>
+                        <p className="text-xs text-white/50">Online narudžbine 24 / 7 — dostava u radne dane</p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Social links row */}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <a
+                      href="https://www.instagram.com/smokhot/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white/70 transition hover:border-fire-500 hover:text-fire-500"
+                    >
+                      Instagram
+                    </a>
+                    <a
+                      href="https://www.facebook.com/smokhot/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white/70 transition hover:border-fire-500 hover:text-fire-500"
+                    >
+                      Facebook
+                    </a>
+                    <a
+                      href="https://www.tiktok.com/@smokhot011"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white/70 transition hover:border-fire-500 hover:text-fire-500"
+                    >
+                      TikTok
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/company/71262668"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-white/70 transition hover:border-fire-500 hover:text-fire-500"
+                    >
+                      LinkedIn
+                    </a>
                   </div>
                 </div>
               </div>
