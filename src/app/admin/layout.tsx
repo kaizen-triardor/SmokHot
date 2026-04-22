@@ -48,40 +48,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname()
 
   useEffect(() => {
-    const token = localStorage.getItem('admin-token')
-    if (!token && pathname !== '/admin') {
-      router.push('/admin')
+    // Login page handles its own auth (no-op here)
+    if (pathname === '/admin') {
+      setLoading(false)
       return
     }
 
-    if (token && pathname !== '/admin') {
-      fetch('/api/admin/dashboard', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (!res.ok) {
-            localStorage.removeItem('admin-token')
-            router.push('/admin')
-            return
-          }
-          setIsAuthenticated(true)
-          setLoading(false)
-          // Decode email from token (best-effort; fallback to cached)
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]))
-            setAdminEmail(payload.email ?? null)
-          } catch {
-            /* ignore */
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('admin-token')
+    // Cookie-based auth: ask the server who we are
+    fetch('/api/admin/me', { credentials: 'same-origin' })
+      .then(async (res) => {
+        if (!res.ok) {
+          // Middleware will have redirected us, but belt-and-suspenders:
           router.push('/admin')
-        })
-    } else {
-      setIsAuthenticated(!!token)
-      setLoading(false)
-    }
+          return
+        }
+        const data = await res.json()
+        setAdminEmail(data.email ?? null)
+        setIsAuthenticated(true)
+      })
+      .catch(() => {
+        router.push('/admin')
+      })
+      .finally(() => setLoading(false))
   }, [router, pathname])
 
   // Close mobile drawer on navigation
@@ -89,8 +77,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setMobileOpen(false)
   }, [pathname])
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin-token')
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      })
+    } catch {
+      /* ignore — redirect anyway */
+    }
     setIsAuthenticated(false)
     router.push('/admin')
   }

@@ -1,111 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
+import { requireAdmin, requireAdminRole } from '@/lib/admin-auth'
+import { handlePrismaError } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
+import { logAudit } from '@/lib/audit-log'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
-
-function verifyToken(token: string): boolean {
-  try {
-    jwt.verify(token, JWT_SECRET)
-    return true
-  } catch (error) {
-    return false
-  }
-}
-
-async function verifyAdminAccess(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-  const token = authHeader.substring(7)
-  return verifyToken(token)
-}
-
-// GET /api/admin/gallery/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const image = await prisma.galleryImage.findUnique({
-      where: { id: params.id }
-    })
-
+    const image = await prisma.galleryImage.findUnique({ where: { id: params.id } })
     if (!image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Slika nije pronađena.' }, { status: 404 })
     }
-
     return NextResponse.json(image)
-
   } catch (error) {
-    console.error('Gallery GET error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Slika')
   }
 }
 
-// PUT /api/admin/gallery/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const body = await request.json().catch(() => ({}))
+    const data: Record<string, unknown> = {}
+    if (body.title !== undefined) data.title = body.title
+    if (body.description !== undefined) data.description = body.description || null
+    if (body.imageUrl !== undefined) data.imageUrl = body.imageUrl
+    if (body.category !== undefined) data.category = body.category || 'general'
+    if (body.featured !== undefined) data.featured = body.featured
+    if (body.sortOrder !== undefined) data.sortOrder = Number(body.sortOrder) || 0
 
-    const body = await request.json()
-
-    const image = await prisma.galleryImage.update({
-      where: { id: params.id },
-      data: {
-        title: body.title,
-        description: body.description || null,
-        imageUrl: body.imageUrl,
-        category: body.category || 'general',
-        featured: body.featured ?? false,
-        sortOrder: body.sortOrder ?? 0,
-      }
-    })
-
+    const image = await prisma.galleryImage.update({ where: { id: params.id }, data })
     refreshSnapshotAsync('gallery')
-
+    await logAudit(request, adminOrResp, {
+      action: 'UPDATE',
+      resource: 'gallery',
+      resourceId: image.id,
+      summary: `Ažurirana slika: ${image.title}`,
+      metadata: { changedFields: Object.keys(data) },
+    })
     return NextResponse.json(image)
-
   } catch (error) {
-    console.error('Gallery PUT error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Slika')
   }
 }
 
-// DELETE /api/admin/gallery/[id]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdminRole(request, ['super_admin'])
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    await prisma.galleryImage.delete({
-      where: { id: params.id }
-    })
-
+    const existing = await prisma.galleryImage.findUnique({ where: { id: params.id } })
+    await prisma.galleryImage.delete({ where: { id: params.id } })
     refreshSnapshotAsync('gallery')
-
-    return NextResponse.json({ message: 'Image deleted' })
-
+    await logAudit(request, adminOrResp, {
+      action: 'DELETE',
+      resource: 'gallery',
+      resourceId: params.id,
+      summary: `Obrisana slika: ${existing?.title ?? params.id}`,
+    })
+    return NextResponse.json({ message: 'Obrisano.' })
   } catch (error) {
-    console.error('Gallery DELETE error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Slika')
   }
 }

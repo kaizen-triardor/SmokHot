@@ -47,7 +47,7 @@ export async function GET(
     const result = await withTimeoutFallback(
       async () => {
         const product = await prisma.product.findUnique({ where: { slug } })
-        if (!product) return null
+        if (!product || product.deletedAt) return null
         return transform(product)
       },
       async () => {

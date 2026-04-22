@@ -19,6 +19,7 @@ export type AuditAction =
   | 'CREATE'
   | 'UPDATE'
   | 'DELETE'
+  | 'RESTORE'
   | 'LOGIN'
   | 'LOGIN_FAILED'
   | 'LOGOUT'

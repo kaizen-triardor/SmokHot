@@ -159,6 +159,9 @@ export default function ProductsAdmin() {
       featured: product?.featured || false,
       inStock: product?.inStock !== false,
       stockCount: product?.stockCount || 0,
+      seoTitle: (product as any)?.seoTitle || '',
+      seoDescription: (product as any)?.seoDescription || '',
+      seoOgImage: (product as any)?.seoOgImage || '',
     })
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -182,6 +185,9 @@ export default function ProductsAdmin() {
         inStock: formData.inStock,
         stockCount: formData.stockCount,
         categories: product?.categories || ['Ljuti sosovi'],
+        seoTitle: formData.seoTitle || null,
+        seoDescription: formData.seoDescription || null,
+        seoOgImage: formData.seoOgImage || null,
       }
 
       onSave(processedData)
@@ -352,6 +358,49 @@ export default function ProductsAdmin() {
                 Na stanju
               </label>
             </div>
+
+            {/* SEO */}
+            <details className="rounded-xl border border-white/10 bg-black/20 p-4">
+              <summary className="cursor-pointer text-sm font-bold uppercase tracking-[0.1em] text-white/80">
+                SEO (opciono)
+              </summary>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-white">SEO naslov</label>
+                  <input
+                    type="text"
+                    maxLength={70}
+                    value={formData.seoTitle}
+                    onChange={(e) => setFormData((p) => ({ ...p, seoTitle: e.target.value }))}
+                    className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-2.5 text-white focus:border-ember-500 focus:outline-none"
+                    placeholder="Ostavi prazno za podrazumevani (ime proizvoda)"
+                  />
+                  <p className="mt-1 text-xs text-white/40">Maks ~70 karaktera. Podrazumevan: ime proizvoda.</p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-white">SEO opis (meta description)</label>
+                  <textarea
+                    rows={2}
+                    maxLength={160}
+                    value={formData.seoDescription}
+                    onChange={(e) => setFormData((p) => ({ ...p, seoDescription: e.target.value }))}
+                    className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-2.5 text-white focus:border-ember-500 focus:outline-none"
+                    placeholder="Ostavi prazno za kratki opis (blurb)"
+                  />
+                  <p className="mt-1 text-xs text-white/40">Maks ~160 karaktera za Google rezultate.</p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-white">OG slika za deljenje (URL)</label>
+                  <input
+                    type="text"
+                    value={formData.seoOgImage}
+                    onChange={(e) => setFormData((p) => ({ ...p, seoOgImage: e.target.value }))}
+                    className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-2.5 text-white focus:border-ember-500 focus:outline-none"
+                    placeholder="Podrazumevan: glavna slika proizvoda"
+                  />
+                </div>
+              </div>
+            </details>
 
             <div className="flex gap-4 pt-4">
               <button

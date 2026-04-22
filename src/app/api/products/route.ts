@@ -42,7 +42,10 @@ export async function GET() {
   try {
     const result = await withTimeoutFallback(
       async () => {
-        const products = await prisma.product.findMany({ orderBy: { heatNumber: 'asc' } })
+        const products = await prisma.product.findMany({
+          where: { deletedAt: null },
+          orderBy: { heatNumber: 'asc' },
+        })
         return products.map(transform)
       },
       () => getSnapshot<PublicProduct[]>('products'),

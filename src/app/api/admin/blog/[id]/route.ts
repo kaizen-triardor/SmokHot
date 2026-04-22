@@ -1,134 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
 import DOMPurify from 'isomorphic-dompurify'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin, requireAdminRole } from '@/lib/admin-auth'
+import { handlePrismaError } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 import { logAudit } from '@/lib/audit-log'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { slugify } from '@/lib/slugify'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
-
-function verifyToken(token: string): boolean {
-  try {
-    jwt.verify(token, JWT_SECRET)
-    return true
-  } catch (error) {
-    return false
-  }
+const ALLOWED_HTML = {
+  ALLOWED_TAGS: [
+    'h1', 'h2', 'h3', 'h4', 'p', 'br', 'strong', 'b', 'em', 'i', 'u',
+    'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'hr', 'img',
+  ],
+  ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'target', 'rel'],
+  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/)/i,
 }
 
-async function verifyAdminAccess(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-  const token = authHeader.substring(7)
-  return verifyToken(token)
-}
-
-// GET /api/admin/blog/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const post = await prisma.blogPost.findUnique({ where: { id: params.id } })
+    if (!post || post.deletedAt) {
+      return NextResponse.json({ error: 'Post nije pronađen.' }, { status: 404 })
     }
-
-    const post = await prisma.blogPost.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
-    }
-
     return NextResponse.json(post)
-
   } catch (error) {
-    console.error('Blog GET error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Post')
   }
 }
 
-// PUT /api/admin/blog/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json().catch(() => ({}))
+    const data: Record<string, unknown> = {}
+    if (body.title !== undefined) data.title = body.title
+    if (body.slug !== undefined) data.slug = slugify(body.slug)
+    if (body.content !== undefined) data.content = DOMPurify.sanitize(body.content, ALLOWED_HTML)
+    if (body.excerpt !== undefined) data.excerpt = body.excerpt
+    if (body.coverImage !== undefined) data.coverImage = body.coverImage || null
+    if (body.published !== undefined) data.published = body.published
+    if (body.author !== undefined) data.author = body.author || 'SmokHot'
+    if (body.tags !== undefined) {
+      data.tags = typeof body.tags === 'string' ? body.tags : body.tags ? JSON.stringify(body.tags) : null
     }
+    if (body.seoTitle !== undefined) data.seoTitle = body.seoTitle || null
+    if (body.seoDescription !== undefined) data.seoDescription = body.seoDescription || null
+    if (body.seoOgImage !== undefined) data.seoOgImage = body.seoOgImage || null
 
-    const body = await request.json()
-
-    const cleanContent = DOMPurify.sanitize(body.content || '', {
-      ALLOWED_TAGS: [
-        'h1', 'h2', 'h3', 'h4', 'p', 'br', 'strong', 'b', 'em', 'i', 'u',
-        'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'hr', 'img',
-      ],
-      ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'target', 'rel'],
-      ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/)/i,
-    })
-
-    const post = await prisma.blogPost.update({
-      where: { id: params.id },
-      data: {
-        title: body.title,
-        slug: body.slug,
-        content: cleanContent,
-        excerpt: body.excerpt,
-        coverImage: body.coverImage || null,
-        published: body.published,
-        author: body.author || 'SmokHot',
-        tags: body.tags ? (typeof body.tags === 'string' ? body.tags : JSON.stringify(body.tags)) : null,
-      }
-    })
+    const post = await prisma.blogPost.update({ where: { id: params.id }, data })
 
     refreshSnapshotAsync('blog')
-    const admin = getAdminFromRequest(request)
-    if (admin) {
-      await logAudit(request, admin, {
-        action: 'UPDATE',
-        resource: 'blog',
-        resourceId: post.id,
-        summary: `Ažuriran post: ${post.title}`,
+    await logAudit(request, adminOrResp, {
+      action: 'UPDATE',
+      resource: 'blog',
+      resourceId: post.id,
+      summary: `Ažuriran post: ${post.title}`,
+      metadata: { changedFields: Object.keys(data) },
+    })
+
+    return NextResponse.json(post)
+  } catch (error) {
+    return handlePrismaError(error, 'Post')
+  }
+}
+
+/**
+ * DELETE — soft delete (sets deletedAt). Only super_admin can perform
+ * destructive actions. Use ?purge=1 to hard-delete (also super_admin only).
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const adminOrResp = requireAdminRole(request, ['super_admin'])
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const purge = searchParams.get('purge') === '1'
+    const existing = await prisma.blogPost.findUnique({ where: { id: params.id } })
+
+    if (purge) {
+      await prisma.blogPost.delete({ where: { id: params.id } })
+    } else {
+      await prisma.blogPost.update({
+        where: { id: params.id },
+        data: { deletedAt: new Date(), published: false },
       })
     }
 
-    return NextResponse.json(post)
-
-  } catch (error) {
-    console.error('Blog PUT error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-// DELETE /api/admin/blog/[id]
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    await prisma.blogPost.delete({
-      where: { id: params.id }
-    })
-
     refreshSnapshotAsync('blog')
-
-    return NextResponse.json({ message: 'Post deleted' })
-
+    await logAudit(request, adminOrResp, {
+      action: 'DELETE',
+      resource: 'blog',
+      resourceId: params.id,
+      summary: `${purge ? 'Trajno obrisan' : 'Obrisan (soft)'} post: ${existing?.title ?? params.id}`,
+    })
+    return NextResponse.json({ message: purge ? 'Trajno obrisano.' : 'Obrisano.' })
   } catch (error) {
-    console.error('Blog DELETE error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Post')
   }
 }

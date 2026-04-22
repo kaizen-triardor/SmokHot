@@ -1,134 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
+import { requireAdmin, requireAdminRole } from '@/lib/admin-auth'
+import { handlePrismaError } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
+import { logAudit } from '@/lib/audit-log'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
-
-function verifyToken(token: string): boolean {
-  try {
-    jwt.verify(token, JWT_SECRET)
-    return true
-  } catch (error) {
-    return false
-  }
-}
-
-async function verifyAdminAccess(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-  const token = authHeader.substring(7)
-  return verifyToken(token)
-}
-
-// GET /api/admin/turneja/[id] - Get single tour event
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const event = await prisma.tourEvent.findUnique({
-      where: { id: params.id }
-    })
-
+    const event = await prisma.tourEvent.findUnique({ where: { id: params.id } })
     if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Događaj nije pronađen.' }, { status: 404 })
     }
-
     return NextResponse.json({
-      id: event.id,
-      title: event.title,
-      location: event.location,
+      ...event,
       date: event.date.toISOString(),
-      time: event.time,
-      status: event.status,
-      highlight: event.highlight,
-      description: event.description,
       createdAt: event.createdAt.toISOString(),
-      updatedAt: event.updatedAt.toISOString()
+      updatedAt: event.updatedAt.toISOString(),
     })
-
   } catch (error) {
-    console.error('Tour event GET error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Događaj')
   }
 }
 
-// PUT /api/admin/turneja/[id] - Update tour event
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-
-    const event = await prisma.tourEvent.update({
-      where: { id: params.id },
-      data: {
-        title: body.title,
-        location: body.location,
-        date: new Date(body.date),
-        time: body.time,
-        status: body.status,
-        highlight: body.highlight || null,
-        description: body.description || null
+    const body = await request.json().catch(() => ({}))
+    const data: Record<string, unknown> = {}
+    if (body.title !== undefined) data.title = body.title
+    if (body.location !== undefined) data.location = body.location
+    if (body.date !== undefined) {
+      const d = new Date(body.date)
+      if (Number.isNaN(d.getTime())) {
+        return NextResponse.json({ error: 'Neispravan datum.' }, { status: 400 })
       }
-    })
+      data.date = d
+    }
+    if (body.time !== undefined) data.time = body.time
+    if (body.status !== undefined) data.status = body.status
+    if (body.highlight !== undefined) data.highlight = body.highlight || null
+    if (body.description !== undefined) data.description = body.description || null
 
+    const event = await prisma.tourEvent.update({ where: { id: params.id }, data })
     refreshSnapshotAsync('turneja')
-
-    return NextResponse.json({
-      id: event.id,
-      title: event.title,
-      location: event.location,
-      date: event.date.toISOString(),
-      time: event.time,
-      status: event.status,
-      highlight: event.highlight,
-      description: event.description,
-      createdAt: event.createdAt.toISOString(),
-      updatedAt: event.updatedAt.toISOString()
+    await logAudit(request, adminOrResp, {
+      action: 'UPDATE',
+      resource: 'turneja',
+      resourceId: event.id,
+      summary: `Ažuriran događaj: ${event.title}`,
+      metadata: { changedFields: Object.keys(data) },
     })
-
+    return NextResponse.json({
+      ...event,
+      date: event.date.toISOString(),
+      createdAt: event.createdAt.toISOString(),
+      updatedAt: event.updatedAt.toISOString(),
+    })
   } catch (error) {
-    console.error('Tour event PUT error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Događaj')
   }
 }
 
-// DELETE /api/admin/turneja/[id] - Delete tour event
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
+  const adminOrResp = requireAdminRole(request, ['super_admin'])
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    await prisma.tourEvent.delete({
-      where: { id: params.id }
-    })
-
+    const existing = await prisma.tourEvent.findUnique({ where: { id: params.id } })
+    await prisma.tourEvent.delete({ where: { id: params.id } })
     refreshSnapshotAsync('turneja')
-
-    return NextResponse.json({ message: 'Event deleted' })
-
+    await logAudit(request, adminOrResp, {
+      action: 'DELETE',
+      resource: 'turneja',
+      resourceId: params.id,
+      summary: `Obrisan događaj: ${existing?.title ?? params.id}`,
+    })
+    return NextResponse.json({ message: 'Obrisano.' })
   } catch (error) {
-    console.error('Tour event DELETE error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Događaj')
   }
 }

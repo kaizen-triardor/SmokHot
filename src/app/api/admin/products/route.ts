@@ -19,12 +19,17 @@ export async function GET(request: NextRequest) {
     const sortField = allowedSortFields.includes(rawSortField) ? rawSortField : 'createdAt'
     const sortOrder = searchParams.get('_order') === 'ASC' ? 'asc' : 'desc'
 
+    const { searchParams: sp } = new URL(request.url)
+    const includeDeleted = sp.get('includeDeleted') === '1'
+    const where = includeDeleted ? {} : { deletedAt: null }
+
     const products = await prisma.product.findMany({
+      where,
       skip: page,
       take: Math.max(1, limit),
       orderBy: { [sortField]: sortOrder },
     })
-    const total = await prisma.product.count()
+    const total = await prisma.product.count({ where })
 
     const transformed = products.map((p) => ({
       id: p.id,
@@ -94,6 +99,9 @@ export async function POST(request: NextRequest) {
         ingredients: body.ingredients ? JSON.stringify(body.ingredients) : null,
         pairings: body.pairings ? JSON.stringify(body.pairings) : null,
         categories: body.categories ? JSON.stringify(body.categories) : null,
+        seoTitle: body.seoTitle || null,
+        seoDescription: body.seoDescription || null,
+        seoOgImage: body.seoOgImage || null,
       },
     })
 

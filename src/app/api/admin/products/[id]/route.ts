@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, requireAdminRole } from '@/lib/admin-auth'
 import { handlePrismaError } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 import { slugify } from '@/lib/slugify'
@@ -40,6 +40,9 @@ export async function GET(
       ingredients: product.ingredients ? JSON.parse(product.ingredients) : [],
       pairings: product.pairings ? JSON.parse(product.pairings) : [],
       categories: product.categories ? JSON.parse(product.categories) : [],
+      seoTitle: product.seoTitle,
+      seoDescription: product.seoDescription,
+      seoOgImage: product.seoOgImage,
       calories: product.calories,
       fat: product.fat,
       carbs: product.carbs,
@@ -92,6 +95,9 @@ export async function PUT(
     if (body.categories !== undefined) {
       data.categories = Array.isArray(body.categories) ? JSON.stringify(body.categories) : body.categories
     }
+    if (body.seoTitle !== undefined) data.seoTitle = body.seoTitle || null
+    if (body.seoDescription !== undefined) data.seoDescription = body.seoDescription || null
+    if (body.seoOgImage !== undefined) data.seoOgImage = body.seoOgImage || null
 
     const product = await prisma.product.update({
       where: { id: params.id },
@@ -120,7 +126,57 @@ export async function PUT(
   }
 }
 
+/**
+ * DELETE — soft-delete by default (sets `deletedAt` + hides from public shop).
+ * `?purge=1` performs a hard delete (super_admin only).
+ *
+ * Soft delete keeps historical order integrity — past orders can still
+ * reference the product by name and price via their JSON items blob.
+ */
 export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const adminOrResp = requireAdminRole(request, ['super_admin'])
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const purge = searchParams.get('purge') === '1'
+    const existing = await prisma.product.findUnique({ where: { id: params.id } })
+    if (!existing) {
+      return NextResponse.json({ error: 'Proizvod nije pronađen.' }, { status: 404 })
+    }
+
+    if (purge) {
+      await prisma.product.delete({ where: { id: params.id } })
+    } else {
+      await prisma.product.update({
+        where: { id: params.id },
+        data: { deletedAt: new Date(), inStock: false },
+      })
+    }
+
+    refreshSnapshotAsync('products')
+    await logAudit(request, adminOrResp, {
+      action: 'DELETE',
+      resource: 'product',
+      resourceId: params.id,
+      summary: `${purge ? 'Trajno obrisan' : 'Obrisan (soft)'} proizvod: ${existing.name}`,
+    })
+    return NextResponse.json({
+      message: purge ? 'Trajno obrisano.' : 'Obrisano (može se povratiti).',
+      purged: purge,
+    })
+  } catch (error) {
+    return handlePrismaError(error, 'Proizvod')
+  }
+}
+
+/**
+ * POST /api/admin/products/[id]/restore — undo a soft delete.
+ */
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
@@ -128,16 +184,22 @@ export async function DELETE(
   if (adminOrResp instanceof NextResponse) return adminOrResp
 
   try {
-    const existing = await prisma.product.findUnique({ where: { id: params.id } })
-    await prisma.product.delete({ where: { id: params.id } })
+    const { searchParams } = new URL(request.url)
+    if (searchParams.get('action') !== 'restore') {
+      return NextResponse.json({ error: 'Nepoznata akcija.' }, { status: 400 })
+    }
+    const product = await prisma.product.update({
+      where: { id: params.id },
+      data: { deletedAt: null },
+    })
     refreshSnapshotAsync('products')
     await logAudit(request, adminOrResp, {
-      action: 'DELETE',
+      action: 'RESTORE',
       resource: 'product',
-      resourceId: params.id,
-      summary: `Obrisan proizvod: ${existing?.name ?? params.id}`,
+      resourceId: product.id,
+      summary: `Povraćen proizvod: ${product.name}`,
     })
-    return NextResponse.json({ message: 'Proizvod obrisan.' })
+    return NextResponse.json({ message: 'Povraćeno.', product })
   } catch (error) {
     return handlePrismaError(error, 'Proizvod')
   }

@@ -1,13 +1,24 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // If a previously-authed session stored a localStorage token, clear it
+  // now that auth lives in cookies. No-op for fresh visitors.
+  useEffect(() => {
+    try {
+      localStorage.removeItem('admin-token')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,15 +29,17 @@ export default function AdminLogin() {
       const response = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
+        // Explicitly send + receive cookies (default is same-origin, but be
+        // defensive against future cross-origin deployment configurations).
+        credentials: 'same-origin',
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (response.ok) {
-        // Store session token
-        localStorage.setItem('admin-token', data.token)
-        router.push('/admin/dashboard')
+        const next = searchParams.get('next')
+        router.push((next && next.startsWith('/admin') ? next : '/admin/dashboard') as any)
       } else {
         setError(data.error || 'Neispravni podaci')
       }
