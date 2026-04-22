@@ -8,10 +8,17 @@ import {
   ClockIcon,
   QuestionMarkCircleIcon,
   TruckIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  BuildingOffice2Icon,
+  UserIcon,
+  HandRaisedIcon,
 } from '@heroicons/react/24/outline'
 
+type EntityType = 'individual' | 'business'
+
 interface ContactForm {
+  entityType: EntityType
+  companyName: string
   firstName: string
   lastName: string
   email: string
@@ -22,6 +29,8 @@ interface ContactForm {
 
 export default function KontaktPage() {
   const [form, setForm] = useState<ContactForm>({
+    entityType: 'individual',
+    companyName: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -29,13 +38,18 @@ export default function KontaktPage() {
     queryType: '',
     message: ''
   })
-  const [errors, setErrors] = useState<Partial<ContactForm>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactForm, string>>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  const validate = (): boolean => {
-    const newErrors: Partial<ContactForm> = {}
+  const isBusiness = form.entityType === 'business'
 
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof ContactForm, string>> = {}
+
+    if (isBusiness && (!form.companyName.trim() || form.companyName.trim().length < 2)) {
+      newErrors.companyName = 'Naziv firme je obavezan (min 2 karaktera)'
+    }
     if (!form.firstName.trim() || form.firstName.trim().length < 2) {
       newErrors.firstName = 'Ime je obavezno (min 2 karaktera)'
     }
@@ -53,6 +67,11 @@ export default function KontaktPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  const setEntityType = (entityType: EntityType) => {
+    setForm((prev) => ({ ...prev, entityType }))
+    setErrors((prev) => ({ ...prev, companyName: '' }))
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
@@ -67,13 +86,25 @@ export default function KontaktPage() {
 
     setIsSubmitting(true)
     try {
+      const entityLabel = isBusiness ? 'PRAVNO LICE' : 'FIZIČKO LICE'
+      const companyLine = isBusiness ? `\nFirma: ${form.companyName}` : ''
+      const subject = isBusiness
+        ? `[B2B] ${form.companyName} — ${form.queryType || 'Partnerstvo / upit'}`
+        : `Kontakt forma: ${form.queryType || 'Opšte pitanje'} - ${form.firstName} ${form.lastName}`
+
       await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: `Kontakt forma: ${form.queryType || 'Opšte pitanje'} - ${form.firstName} ${form.lastName}`,
-          body: `Ime: ${form.firstName} ${form.lastName}\nEmail: ${form.email}\nTelefon: ${form.phone || 'Nije uneto'}\nTip: ${form.queryType || 'Nije izabrano'}\n\nPoruka:\n${form.message}`
-        })
+          subject,
+          body:
+            `Tip: ${entityLabel}${companyLine}\n` +
+            `Kontakt osoba: ${form.firstName} ${form.lastName}\n` +
+            `Email: ${form.email}\n` +
+            `Telefon: ${form.phone || 'Nije uneto'}\n` +
+            `Tip upita: ${form.queryType || 'Nije izabrano'}\n\n` +
+            `Poruka:\n${form.message}`,
+        }),
       })
       setSubmitted(true)
     } catch {
@@ -89,6 +120,23 @@ export default function KontaktPage() {
         ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
         : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
     }`
+
+  const entityQueryOptions = isBusiness
+    ? [
+        { value: 'partnership', label: 'Partnerstvo / distribucija' },
+        { value: 'horeca', label: 'HoReCa (restoran, hotel, bar, kafana)' },
+        { value: 'bulk', label: 'Veleprodaja / velika količina' },
+        { value: 'private-label', label: 'Private label / brendiranje' },
+        { value: 'event', label: 'Saradnja na događaju' },
+        { value: 'other', label: 'Ostalo' },
+      ]
+    : [
+        { value: 'order', label: 'Pitanje o narudžbini' },
+        { value: 'product', label: 'Informacije o proizvodu' },
+        { value: 'delivery', label: 'Dostava i plaćanje' },
+        { value: 'feedback', label: 'Povratne informacije' },
+        { value: 'other', label: 'Ostalo' },
+      ]
 
   return (
     <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7]">
@@ -249,10 +297,101 @@ export default function KontaktPage() {
                       Pošaljite poruku
                     </h2>
 
+                    {/* Entity-type toggle: Individual vs Business */}
+                    <div className="mb-6">
+                      <span className="mb-2 block text-sm font-bold text-white">
+                        Pišete kao
+                      </span>
+                      <div
+                        role="radiogroup"
+                        aria-label="Tip pošiljaoca"
+                        className="grid grid-cols-2 gap-2 rounded-xl border border-white/15 bg-black/30 p-1"
+                      >
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={!isBusiness}
+                          onClick={() => setEntityType('individual')}
+                          className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold uppercase tracking-[0.1em] transition ${
+                            !isBusiness
+                              ? 'bg-fire-500 text-white shadow-[0_4px_14px_-4px_rgba(229,36,33,0.5)]'
+                              : 'text-white/70 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <UserIcon className="h-4 w-4" />
+                          Fizičko lice
+                        </button>
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={isBusiness}
+                          onClick={() => setEntityType('business')}
+                          className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold uppercase tracking-[0.1em] transition ${
+                            isBusiness
+                              ? 'bg-fire-500 text-white shadow-[0_4px_14px_-4px_rgba(229,36,33,0.5)]'
+                              : 'text-white/70 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <BuildingOffice2Icon className="h-4 w-4" />
+                          Pravno lice
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* B2B partnership banner — shown only when Pravno lice is selected */}
+                    {isBusiness && (
+                      <div className="mb-6 overflow-hidden rounded-2xl border border-warning-400/30 bg-gradient-to-br from-warning-400/10 to-fire-500/10 p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning-400/20">
+                            <HandRaisedIcon className="h-5 w-5 text-warning-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-base font-black uppercase tracking-[0.08em] text-warning-400">
+                              Specijalna ponuda za firme
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-white/80">
+                              Nudimo <strong className="text-white">posebne uslove saradnje</strong> za
+                              restorane, hotele, barove, kafane i druge ugostiteljske objekte —
+                              kao i za maloprodajne lance i distributere. Veleprodajne cene, private-label
+                              opcije, co-branding i saradnja na događajima su sve na stolu.
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-white/70">
+                              Popunite formu dole — odgovorićemo sa detaljima i dogovoriti
+                              <strong className="text-warning-300"> personalizovanu ponudu</strong> za
+                              vašu firmu u roku od 24–48 sati.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
+                      {/* Company name — only when Pravno lice */}
+                      {isBusiness && (
+                        <div>
+                          <label htmlFor="companyName" className="mb-2 block text-sm font-bold text-white">
+                            Naziv firme *
+                          </label>
+                          <input
+                            id="companyName"
+                            type="text"
+                            name="companyName"
+                            value={form.companyName}
+                            onChange={handleChange}
+                            className={inputClass('companyName')}
+                            placeholder="npr. Smokin' Hot d.o.o."
+                          />
+                          {errors.companyName && (
+                            <p className="mt-1 text-xs text-red-400">{errors.companyName}</p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="grid gap-6 sm:grid-cols-2">
                         <div>
-                          <label htmlFor="firstName" className="mb-2 block text-sm font-bold text-white">Ime *</label>
+                          <label htmlFor="firstName" className="mb-2 block text-sm font-bold text-white">
+                            {isBusiness ? 'Ime kontakt osobe *' : 'Ime *'}
+                          </label>
                           <input
                             id="firstName"
                             type="text"
@@ -265,7 +404,9 @@ export default function KontaktPage() {
                           {errors.firstName && <p className="mt-1 text-xs text-red-400">{errors.firstName}</p>}
                         </div>
                         <div>
-                          <label htmlFor="lastName" className="mb-2 block text-sm font-bold text-white">Prezime *</label>
+                          <label htmlFor="lastName" className="mb-2 block text-sm font-bold text-white">
+                            {isBusiness ? 'Prezime kontakt osobe *' : 'Prezime *'}
+                          </label>
                           <input
                             id="lastName"
                             type="text"
@@ -313,14 +454,14 @@ export default function KontaktPage() {
                           name="queryType"
                           value={form.queryType}
                           onChange={handleChange}
-                          className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-ember-500 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
+                          className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-fire-500 focus:outline-none focus:ring-2 focus:ring-fire-500/20"
                         >
                           <option value="">Izaberite tip upita</option>
-                          <option value="order">Pitanje o narudžbini</option>
-                          <option value="product">Informacije o proizvodu</option>
-                          <option value="delivery">Dostava i plaćanje</option>
-                          <option value="feedback">Povratne informacije</option>
-                          <option value="other">Ostalo</option>
+                          {entityQueryOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -333,7 +474,11 @@ export default function KontaktPage() {
                           onChange={handleChange}
                           rows={5}
                           className={inputClass('message')}
-                          placeholder="Kako možemo da vam pomognemo?"
+                          placeholder={
+                            isBusiness
+                              ? 'Opišite vaš biznis i potrebe: tip objekta, količine, lokacija, preferirani uslovi…'
+                              : 'Kako možemo da vam pomognemo?'
+                          }
                         />
                         {errors.message && <p className="mt-1 text-xs text-red-400">{errors.message}</p>}
                       </div>
