@@ -115,8 +115,8 @@ export default function TurnejaAdminPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Upravljanje turnejom</h1>
-          <p className="mt-2 text-white/70">Dodaj i uredjuj dogadjaje na kojima predstavljate sosove</p>
+          <h1 className="text-3xl font-black uppercase tracking-[0.03em] text-white">Upravljanje turnejama</h1>
+          <p className="mt-2 text-white/70">Dodaj i uredi događaje na kojima predstavljate sosove</p>
         </div>
         <button
           onClick={() => {
@@ -126,7 +126,7 @@ export default function TurnejaAdminPage() {
           className="flex items-center gap-2 rounded-xl border-2 border-ember-500 bg-ember-500 px-6 py-3 font-bold uppercase tracking-[0.15em] text-white transition hover:-translate-y-1"
         >
           <PlusIcon className="h-5 w-5" />
-          Dodaj dogadjaj
+          Dodaj događaj
         </button>
       </div>
 
@@ -146,7 +146,7 @@ export default function TurnejaAdminPage() {
         <div className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-4">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-ember-500" />
-            <p className="text-white/60">Ucitavanje dogadjaja...</p>
+            <p className="text-white/60">Učitavanje događaja…</p>
           </div>
         </div>
       ) : (
@@ -431,7 +431,7 @@ function EventForm({
               type="submit"
               className="flex-1 rounded-xl border-2 border-ember-500 bg-ember-500 py-3 font-bold uppercase tracking-[0.15em] text-white transition hover:-translate-y-1"
             >
-              {event ? 'Sacuvaj izmene' : 'Dodaj dogadjaj'}
+              {event ? 'Sačuvaj izmene' : 'Dodaj događaj'}
             </button>
             <button
               type="button"

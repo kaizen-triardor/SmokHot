@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { EnvelopeIcon, PhoneIcon, TruckIcon, CreditCardIcon } from '@heroicons/react/24/outline'
 
 const primaryNav = [
@@ -19,6 +22,10 @@ const legalNav = [
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const pathname = usePathname()
+
+  // Public footer never renders on admin routes.
+  if (pathname?.startsWith('/admin')) return null
 
   return (
     <footer className="relative z-10 mt-20 border-t border-white/10 bg-[#0b0b0d]">

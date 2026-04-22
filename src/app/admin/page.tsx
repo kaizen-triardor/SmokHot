@@ -79,7 +79,7 @@ export default function AdminLogin() {
                   value={credentials.email}
                   onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                   className="w-full rounded-2xl border border-white/20 bg-black/40 px-4 py-3 text-white placeholder-white/40 transition focus:border-fire-500 focus:bg-black/60 focus:outline-none focus:ring-2 focus:ring-fire-500/20"
-                  placeholder="admin@smokhot.rs"
+                  placeholder="ime@smokinhot.rs"
                   required
                 />
               </div>

@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { TrashIcon, PlusIcon, XMarkIcon, StarIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, PlusIcon, XMarkIcon, StarIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid'
+import { useConfirm } from '@/components/admin/ConfirmModal'
 
 interface GalleryImage {
   id: string
@@ -35,9 +36,11 @@ const emptyImage = {
 }
 
 export default function AdminGalerijaPage() {
+  const confirm = useConfirm()
   const [images, setImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(emptyImage)
   const [activeCategory, setActiveCategory] = useState('all')
   const [saving, setSaving] = useState(false)
@@ -66,21 +69,45 @@ export default function AdminGalerijaPage() {
   }, [])
 
   const handleCreate = () => {
+    setEditingId(null)
     setFormData({ ...emptyImage, sortOrder: images.length })
     setShowForm(true)
     setError('')
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Da li ste sigurni da želite da obrišete ovu sliku?')) return
+  const handleEdit = (image: GalleryImage) => {
+    setEditingId(image.id)
+    setFormData({
+      title: image.title,
+      description: image.description ?? '',
+      imageUrl: image.imageUrl,
+      category: image.category,
+      featured: image.featured,
+      sortOrder: image.sortOrder,
+    })
+    setShowForm(true)
+    setError('')
+  }
+
+  const handleDelete = async (image: GalleryImage) => {
+    const ok = await confirm({
+      title: 'Obriši sliku?',
+      body: `„${image.title}” će biti trajno uklonjena iz galerije.`,
+      danger: true,
+      confirmLabel: 'Obriši',
+    })
+    if (!ok) return
 
     try {
-      const res = await fetch(`/api/admin/gallery/${id}`, {
+      const res = await fetch(`/api/admin/gallery/${image.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` }
+        headers: { Authorization: `Bearer ${getToken()}` },
       })
       if (res.ok) {
-        setImages(images.filter(img => img.id !== id))
+        setImages(images.filter((img) => img.id !== image.id))
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'Greška pri brisanju')
       }
     } catch (err) {
       console.error('Failed to delete image:', err)
@@ -116,20 +143,23 @@ export default function AdminGalerijaPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/admin/gallery', {
-        method: 'POST',
+      const url = editingId ? `/api/admin/gallery/${editingId}` : '/api/admin/gallery'
+      const method = editingId ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`
+          Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       })
 
       if (res.ok) {
         setShowForm(false)
+        setEditingId(null)
         fetchImages()
       } else {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         setError(data.error || 'Greška prilikom čuvanja')
       }
     } catch (err) {
@@ -236,8 +266,16 @@ export default function AdminGalerijaPage() {
                       )}
                     </button>
                     <button
-                      onClick={() => handleDelete(image.id)}
+                      onClick={() => handleEdit(image)}
+                      className="rounded-lg p-1.5 text-white/40 hover:text-ember-400 transition"
+                      title="Uredi"
+                    >
+                      <PencilSquareIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(image)}
                       className="rounded-lg p-1.5 text-white/40 hover:text-red-400 transition"
+                      title="Obriši"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
@@ -258,9 +296,14 @@ export default function AdminGalerijaPage() {
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 backdrop-blur-sm p-4 pt-16">
           <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#0b0b0d] p-8">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Nova slika</h2>
+              <h2 className="text-2xl font-bold text-white">
+                {editingId ? 'Uredi sliku' : 'Nova slika'}
+              </h2>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false)
+                  setEditingId(null)
+                }}
                 className="rounded-lg p-2 text-white/60 hover:text-white hover:bg-white/10 transition"
               >
                 <XMarkIcon className="h-6 w-6" />
@@ -368,11 +411,14 @@ export default function AdminGalerijaPage() {
                   disabled={saving}
                   className="flex-1 rounded-xl bg-ember-500 px-6 py-3 font-bold text-white transition hover:bg-ember-600 disabled:opacity-50"
                 >
-                  {saving ? 'Čuvanje...' : 'Dodaj sliku'}
+                  {saving ? 'Čuvanje…' : editingId ? 'Sačuvaj izmene' : 'Dodaj sliku'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
                   className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white/70 transition hover:text-white hover:border-white/40"
                 >
                   Otkaži

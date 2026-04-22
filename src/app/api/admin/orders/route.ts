@@ -1,124 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
+import { requireAdmin } from '@/lib/admin-auth'
+import { handlePrismaError } from '@/lib/admin-errors'
+import { isValidStatus, isAllowedTransition, type OrderStatus } from '@/lib/order-flow'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
-
-function verifyToken(token: string): boolean {
-  try {
-    jwt.verify(token, JWT_SECRET)
-    return true
-  } catch (error) {
-    return false
-  }
-}
-
-// Helper to verify admin access
-async function verifyAdminAccess(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.substring(7)
-  return verifyToken(token)
-}
-
-// GET /api/admin/orders - List all orders with pagination
 export async function GET(request: NextRequest) {
-  try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
 
+  try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('_start') || '0')
-    const limit = parseInt(searchParams.get('_end') || '10') - page
+    const limit = parseInt(searchParams.get('_end') || '100') - page
     const allowedSortFields = ['createdAt', 'orderNumber', 'customerName', 'status', 'totalAmount', 'updatedAt']
     const rawSortField = searchParams.get('_sort') || 'createdAt'
     const sortField = allowedSortFields.includes(rawSortField) ? rawSortField : 'createdAt'
     const sortOrder = searchParams.get('_order') === 'ASC' ? 'asc' : 'desc'
-
-    // Optional status filter
     const statusFilter = searchParams.get('status')
 
     const where = statusFilter ? { status: statusFilter } : {}
-
     const orders = await prisma.order.findMany({
       where,
       skip: page,
-      take: limit,
-      orderBy: {
-        [sortField]: sortOrder,
-      },
+      take: Math.max(1, limit),
+      orderBy: { [sortField]: sortOrder },
     })
-
     const total = await prisma.order.count({ where })
 
-    const transformedOrders = orders.map((order) => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      customerAddress: order.customerAddress,
-      notes: order.notes,
-      items: order.items,
-      totalAmount: order.totalAmount,
-      status: order.status,
-      shippingCost: order.shippingCost,
-      trackingNumber: order.trackingNumber,
-      adminNotes: order.adminNotes,
-      estimatedDelivery: order.estimatedDelivery?.toISOString() || null,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
+    const transformed = orders.map((o) => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      customerAddress: o.customerAddress,
+      notes: o.notes,
+      items: o.items,
+      totalAmount: o.totalAmount,
+      status: o.status,
+      shippingCost: o.shippingCost,
+      trackingNumber: o.trackingNumber,
+      adminNotes: o.adminNotes,
+      estimatedDelivery: o.estimatedDelivery?.toISOString() || null,
+      createdAt: o.createdAt.toISOString(),
+      updatedAt: o.updatedAt.toISOString(),
     }))
 
-    const response = NextResponse.json(transformedOrders)
+    const response = NextResponse.json(transformed)
     response.headers.set('X-Total-Count', total.toString())
     return response
-
   } catch (error) {
-    console.error('Admin Orders GET error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Porudžbine')
   }
 }
 
-// PATCH /api/admin/orders - Bulk update order status
+/**
+ * PATCH /api/admin/orders — bulk status change.
+ * Now enforces the same per-order transition rules as the [id] endpoint:
+ * orders whose current state cannot legally transition to `status` are
+ * skipped, and the response reports which were updated vs. skipped.
+ */
 export async function PATCH(request: NextRequest) {
+  const adminOrResp = requireAdmin(request)
+  if (adminOrResp instanceof NextResponse) return adminOrResp
+
   try {
-    const isAuthorized = await verifyAdminAccess(request)
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json().catch(() => ({}))
+    const { ids, status } = body as { ids?: string[]; status?: string }
+
+    if (!status || !isValidStatus(status)) {
+      return NextResponse.json({ error: 'Nepoznat status.' }, { status: 400 })
     }
-
-    const body = await request.json()
-    const { ids, status } = body
-
-    const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json(
-        { error: 'ids must be a non-empty array' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: '`ids` mora biti neprazan niz.' }, { status: 400 })
     }
 
-    const result = await prisma.order.updateMany({
+    const target = status as OrderStatus
+
+    // Fetch current statuses so we can decide per-order which are legal.
+    const current = await prisma.order.findMany({
       where: { id: { in: ids } },
-      data: { status },
+      select: { id: true, status: true },
     })
 
-    return NextResponse.json({ updated: result.count })
+    const updatableIds: string[] = []
+    const skipped: { id: string; reason: string }[] = []
 
+    for (const row of current) {
+      const from = row.status as OrderStatus
+      if (from === target) {
+        skipped.push({ id: row.id, reason: 'already in target status' })
+        continue
+      }
+      if (!isAllowedTransition(from, target)) {
+        skipped.push({ id: row.id, reason: `illegal transition ${from} → ${target}` })
+        continue
+      }
+      updatableIds.push(row.id)
+    }
+
+    let updated = 0
+    if (updatableIds.length > 0) {
+      const r = await prisma.order.updateMany({
+        where: { id: { in: updatableIds } },
+        data: { status: target },
+      })
+      updated = r.count
+    }
+
+    return NextResponse.json({ updated, skipped })
   } catch (error) {
-    console.error('Admin Orders PATCH error:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return handlePrismaError(error, 'Porudžbine')
   }
 }

@@ -7,13 +7,13 @@ async function main() {
   console.log('🌶️ Seeding SmokHot database...\n')
 
   // ============ ADMIN USER ============
-  const adminPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'SmokinHot2024!', 12)
+  const adminPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'Barajevo1389', 12)
 
   const admin = await prisma.admin.upsert({
-    where: { email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@smokhot.rs' },
+    where: { email: process.env.DEFAULT_ADMIN_EMAIL || 'smokinhotcollective@gmail.com' },
     update: {},
     create: {
-      email: process.env.DEFAULT_ADMIN_EMAIL || 'admin@smokhot.rs',
+      email: process.env.DEFAULT_ADMIN_EMAIL || 'smokinhotcollective@gmail.com',
       name: 'SmokHot Admin',
       password: adminPassword,
       role: 'super_admin',

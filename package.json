@@ -21,11 +21,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@heroicons/react": "^2.2.0",
-    "@mui/material": "^7.3.9",
-    "@mui/x-data-grid": "^8.27.5",
     "@next/font": "^14.2.0",
     "@prisma/client": "^5.22.0",
     "@types/bcryptjs": "^2.4.6",
@@ -48,9 +44,7 @@
     "nodemailer": "^7.0.13",
     "postcss": "^8.4.0",
     "prisma": "^5.22.0",
-    "ra-data-simple-rest": "^5.14.4",
     "react": "^18.2.0",
-    "react-admin": "^5.14.4",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss": "^3.4.0",

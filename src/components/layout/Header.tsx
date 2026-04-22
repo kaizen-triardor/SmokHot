@@ -11,6 +11,9 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [itemCount, setItemCount] = useState(0)
 
+  // Public header never renders on admin routes.
+  if (pathname?.startsWith('/admin')) return null
+
   useEffect(() => {
     const updateCount = () => {
       if (typeof window !== 'undefined') {

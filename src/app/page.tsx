@@ -4,7 +4,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { products } from '@/data/products'
-import { useHomepage, useBrandInfo } from '@/lib/cms'
 import { ShoppingBagIcon } from '@heroicons/react/24/outline'
 
 interface TourEventApi {
@@ -66,10 +65,6 @@ export default function HomePage() {
   const [heatScaleLoading, setHeatScaleLoading] = useState(true)
   const [tourEvents, setTourEvents] = useState<TourEventApi[]>([])
   const [tourLoading, setTourLoading] = useState(true)
-  // CMS Integration - All content can now be managed centrally
-  const homepageContent = useHomepage()
-  const brandInfo = useBrandInfo()
-
   // Load cart from localStorage on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {

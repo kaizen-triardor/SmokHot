@@ -107,7 +107,10 @@ model Admin {
   password String // Hashed with bcrypt
   role     String @default("admin") // 'admin', 'super_admin'
   active   Boolean @default(true)
-  
+
+  lastLoginAt DateTime?
+  passwordChangedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
