@@ -46,6 +46,14 @@ model Product {
   protein     Float?
   sodium      Int?
   
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoOgImage     String?
+
+  // Soft delete — keeps historical orders readable
+  deletedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -122,12 +130,20 @@ model BlogPost {
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
-  content     String   // HTML or markdown content
+  content     String   // HTML (sanitized at write time via DOMPurify)
   excerpt     String   // Short preview text
   coverImage  String?  // Image URL/path
   published   Boolean  @default(false)
   author      String   @default("SmokHot")
   tags        String?  // JSON array of tags
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoOgImage     String?
+
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -170,9 +186,30 @@ model Setting {
   id    String @id @default(cuid())
   key   String @unique
   value String // JSON for complex settings
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// Audit Log — records admin actions for accountability
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String   // FK-like reference to admin
+  adminEmail  String   // denormalized so log remains readable after admin delete
+  action      String   // 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PASSWORD_CHANGE'
+  resource    String   // 'product', 'order', 'blog', 'gallery', 'turneja', 'settings', 'admin'
+  resourceId  String?  // the affected row id (when applicable)
+  summary     String?  // short human-readable description
+  metadata    String?  // JSON blob with before/after or extra fields
+  ip          String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([adminId])
+  @@index([resource])
+  @@map("audit_logs")
 }

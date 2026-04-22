@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { handlePrismaError } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 import { slugify } from '@/lib/slugify'
+import { logAudit } from '@/lib/audit-log'
 
 export async function GET(
   request: NextRequest,
@@ -98,6 +99,13 @@ export async function PUT(
     })
 
     refreshSnapshotAsync('products')
+    await logAudit(request, adminOrResp, {
+      action: 'UPDATE',
+      resource: 'product',
+      resourceId: product.id,
+      summary: `Ažuriran proizvod: ${product.name}`,
+      metadata: { changedFields: Object.keys(data) },
+    })
 
     return NextResponse.json({
       id: product.id,
@@ -120,8 +128,15 @@ export async function DELETE(
   if (adminOrResp instanceof NextResponse) return adminOrResp
 
   try {
+    const existing = await prisma.product.findUnique({ where: { id: params.id } })
     await prisma.product.delete({ where: { id: params.id } })
     refreshSnapshotAsync('products')
+    await logAudit(request, adminOrResp, {
+      action: 'DELETE',
+      resource: 'product',
+      resourceId: params.id,
+      summary: `Obrisan proizvod: ${existing?.name ?? params.id}`,
+    })
     return NextResponse.json({ message: 'Proizvod obrisan.' })
   } catch (error) {
     return handlePrismaError(error, 'Proizvod')

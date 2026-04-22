@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { TrashIcon, PlusIcon, XMarkIcon, StarIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid'
 import { useConfirm } from '@/components/admin/ConfirmModal'
+import ImageUpload from '@/components/admin/ImageUpload'
 
 interface GalleryImage {
   id: string
@@ -332,14 +333,11 @@ export default function AdminGalerijaPage() {
 
               {/* Image URL */}
               <div>
-                <label className="mb-2 block text-sm font-bold text-white">URL slike *</label>
-                <input
-                  type="text"
-                  required
+                <ImageUpload
                   value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white placeholder-white/50 focus:border-ember-500 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
-                  placeholder="https://primer.com/slika.jpg"
+                  onChange={(url) => setFormData({ ...formData, imageUrl: url })}
+                  slot="gallery"
+                  label="Slika *"
                 />
               </div>
 

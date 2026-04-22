@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import DOMPurify from 'isomorphic-dompurify'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
+import { logAudit } from '@/lib/audit-log'
+import { getAdminFromRequest } from '@/lib/admin-auth'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -63,12 +66,21 @@ export async function PUT(
 
     const body = await request.json()
 
+    const cleanContent = DOMPurify.sanitize(body.content || '', {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'p', 'br', 'strong', 'b', 'em', 'i', 'u',
+        'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'hr', 'img',
+      ],
+      ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'target', 'rel'],
+      ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/)/i,
+    })
+
     const post = await prisma.blogPost.update({
       where: { id: params.id },
       data: {
         title: body.title,
         slug: body.slug,
-        content: body.content,
+        content: cleanContent,
         excerpt: body.excerpt,
         coverImage: body.coverImage || null,
         published: body.published,
@@ -78,6 +90,15 @@ export async function PUT(
     })
 
     refreshSnapshotAsync('blog')
+    const admin = getAdminFromRequest(request)
+    if (admin) {
+      await logAudit(request, admin, {
+        action: 'UPDATE',
+        resource: 'blog',
+        resourceId: post.id,
+        summary: `Ažuriran post: ${post.title}`,
+      })
+    }
 
     return NextResponse.json(post)
 

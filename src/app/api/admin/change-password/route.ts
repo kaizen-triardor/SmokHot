@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
 import { handlePrismaError, ValidationError } from '@/lib/admin-errors'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit-log'
 
 /**
  * POST /api/admin/change-password
@@ -80,6 +81,13 @@ export async function POST(request: NextRequest) {
         password: newHash,
         passwordChangedAt: new Date(),
       },
+    })
+
+    await logAudit(request, admin, {
+      action: 'PASSWORD_CHANGE',
+      resource: 'admin',
+      resourceId: admin.id,
+      summary: 'Lozinka promenjena',
     })
 
     return NextResponse.json({ ok: true, message: 'Lozinka je uspešno promenjena.' })

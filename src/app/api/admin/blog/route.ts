@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import DOMPurify from 'isomorphic-dompurify'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
+import { logAudit } from '@/lib/audit-log'
+import { getAdminFromRequest } from '@/lib/admin-auth'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -57,11 +60,21 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
+    // Sanitize HTML before storing — closes the stored-XSS lane.
+    const cleanContent = DOMPurify.sanitize(body.content || '', {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'p', 'br', 'strong', 'b', 'em', 'i', 'u',
+        'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre', 'hr', 'img',
+      ],
+      ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'target', 'rel'],
+      ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/)/i,
+    })
+
     const post = await prisma.blogPost.create({
       data: {
         title: body.title,
         slug: body.slug || body.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        content: body.content || '',
+        content: cleanContent,
         excerpt: body.excerpt || '',
         coverImage: body.coverImage || null,
         published: body.published ?? false,
@@ -71,8 +84,17 @@ export async function POST(request: NextRequest) {
     })
 
     refreshSnapshotAsync('blog')
+    const admin = getAdminFromRequest(request)
+    if (admin) {
+      await logAudit(request, admin, {
+        action: 'CREATE',
+        resource: 'blog',
+        resourceId: post.id,
+        summary: `Kreiran post: ${post.title}`,
+      })
+    }
 
-    return NextResponse.json(post)
+    return NextResponse.json(post, { status: 201 })
 
   } catch (error) {
     console.error('Blog POST error:', error)

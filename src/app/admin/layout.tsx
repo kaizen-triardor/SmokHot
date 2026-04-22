@@ -17,6 +17,7 @@ import {
   XMarkIcon,
   ArrowRightOnRectangleIcon,
   ChevronRightIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline'
 import { ConfirmModalProvider } from '@/components/admin/ConfirmModal'
 
@@ -35,6 +36,7 @@ const BREADCRUMB_LABELS: Record<string, string> = {
   '/admin/galerija': 'Galerija',
   '/admin/settings': 'Postavke',
   '/admin/profile': 'Moj nalog',
+  '/admin/audit-log': 'Audit log',
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -131,6 +133,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Blog', href: '/admin/blog', Icon: PencilSquareIcon },
     { name: 'Galerija', href: '/admin/galerija', Icon: PhotoIcon },
     { name: 'Postavke', href: '/admin/settings', Icon: Cog6ToothIcon },
+    { name: 'Audit log', href: '/admin/audit-log', Icon: ClipboardDocumentListIcon },
   ]
 
   return (

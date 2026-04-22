@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import ImageUpload from '@/components/admin/ImageUpload'
+import { useConfirm } from '@/components/admin/ConfirmModal'
 
 interface ProductData {
   id: string
@@ -60,23 +62,32 @@ export default function ProductsAdmin() {
     product.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const confirmAction = useConfirm()
+
   const handleEdit = (product: ProductData) => {
     setEditingProduct(product)
     setShowForm(true)
   }
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')) return
+  const handleDelete = async (product: ProductData) => {
+    const ok = await confirmAction({
+      title: 'Obriši proizvod?',
+      body: `"${product.name}" će biti trajno uklonjen. Istorijske porudžbine ostaju očuvane.`,
+      danger: true,
+      confirmLabel: 'Obriši',
+    })
+    if (!ok) return
 
     try {
-      const res = await fetch(`/api/admin/products/${productId}`, {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` }
+        headers: { Authorization: `Bearer ${getToken()}` },
       })
       if (res.ok) {
         await fetchProducts()
       } else {
-        alert('Greška pri brisanju proizvoda')
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'Greška pri brisanju proizvoda')
       }
     } catch (error) {
       console.error('Delete error:', error)
@@ -212,24 +223,13 @@ export default function ProductsAdmin() {
             </div>
 
             {/* Product Image */}
-            <div>
-              <label className="block text-sm font-bold text-white mb-2">Slika proizvoda (URL ili putanja)</label>
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={formData.mainImage}
-                  onChange={(e) => setFormData(prev => ({ ...prev, mainImage: e.target.value }))}
-                  className="flex-1 rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white placeholder-white/50 focus:border-ember-500 focus:outline-none"
-                  placeholder="/uploads/products/ime-proizvoda.jpg"
-                />
-                {formData.mainImage && (
-                  <div className="h-12 w-12 rounded-lg border border-white/20 overflow-hidden flex-shrink-0">
-                    <img src={formData.mainImage} alt="Preview" className="h-full w-full object-cover" />
-                  </div>
-                )}
-              </div>
-              <p className="mt-1 text-xs text-white/40">Lokalna putanja (npr. /uploads/products/gecko-mild.jpg) ili URL slike</p>
-            </div>
+            <ImageUpload
+              value={formData.mainImage}
+              onChange={(url) => setFormData((prev) => ({ ...prev, mainImage: url }))}
+              slot="products"
+              label="Slika proizvoda"
+              helperText="Prevuci fajl ili nalepi URL (/uploads/products/... ili https://...)"
+            />
 
             <div>
               <label className="block text-sm font-bold text-white mb-2">Kratki opis *</label>
@@ -487,7 +487,7 @@ export default function ProductsAdmin() {
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDelete(product)}
                         className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition"
                       >
                         <TrashIcon className="h-4 w-4" />

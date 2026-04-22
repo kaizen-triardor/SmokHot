@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { PencilIcon, TrashIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import ImageUpload from '@/components/admin/ImageUpload'
+import { useConfirm } from '@/components/admin/ConfirmModal'
 
 interface BlogPost {
   id: string
@@ -48,6 +50,7 @@ export default function AdminBlogPage() {
   const [tagsInput, setTagsInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [previewMode, setPreviewMode] = useState(false)
 
   const getToken = () => localStorage.getItem('admin-token') || ''
 
@@ -318,31 +321,58 @@ export default function AdminBlogPage() {
                 />
               </div>
 
-              {/* Content */}
+              {/* Content with tabs: Edit / Preview */}
               <div>
-                <label className="mb-2 block text-sm font-bold text-white">Sadržaj *</label>
-                <textarea
-                  required
-                  rows={10}
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white placeholder-white/50 focus:border-ember-500 focus:outline-none focus:ring-2 focus:ring-ember-500/20 font-mono text-sm"
-                  placeholder="HTML sadržaj posta..."
-                />
-                <p className="mt-1 text-xs text-white/40">Podržava HTML tagove (h2, p, strong, a...)</p>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-sm font-bold text-white">Sadržaj *</label>
+                  <div className="flex rounded-lg border border-white/15 bg-black/30 p-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode(false)}
+                      className={`rounded px-3 py-1 font-bold uppercase tracking-[0.1em] transition ${
+                        !previewMode ? 'bg-ember-500 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      Uredi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode(true)}
+                      className={`rounded px-3 py-1 font-bold uppercase tracking-[0.1em] transition ${
+                        previewMode ? 'bg-ember-500 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      Pregled
+                    </button>
+                  </div>
+                </div>
+                {previewMode ? (
+                  <div
+                    className="prose prose-invert min-h-[260px] max-w-none rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white"
+                    dangerouslySetInnerHTML={{ __html: formData.content }}
+                  />
+                ) : (
+                  <textarea
+                    required
+                    rows={12}
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 font-mono text-sm text-white placeholder-white/50 focus:border-ember-500 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
+                    placeholder="<h2>Naslov sekcije</h2><p>Paragraf teksta…</p>"
+                  />
+                )}
+                <p className="mt-1 text-xs text-white/40">
+                  Dozvoljeni HTML tagovi: h1–h4, p, strong, em, u, a, ul/ol/li, blockquote, code, img, hr. Sadržaj se automatski saniterizuje pri čuvanju.
+                </p>
               </div>
 
               {/* Cover Image */}
-              <div>
-                <label className="mb-2 block text-sm font-bold text-white">Cover slika (URL)</label>
-                <input
-                  type="text"
-                  value={formData.coverImage || ''}
-                  onChange={(e) => setFormData({ ...formData, coverImage: e.target.value || null })}
-                  className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white placeholder-white/50 focus:border-ember-500 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
-                  placeholder="https://primer.com/slika.jpg"
-                />
-              </div>
+              <ImageUpload
+                value={formData.coverImage}
+                onChange={(url) => setFormData({ ...formData, coverImage: url || null })}
+                slot="blog"
+                label="Cover slika"
+              />
 
               {/* Tags */}
               <div>

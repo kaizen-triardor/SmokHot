@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdmin } from '@/lib/auth'
 import { signAdminToken, buildAdminCookie } from '@/lib/admin-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logAudit } from '@/lib/audit-log'
 
 export async function POST(request: NextRequest) {
   // Rate limit login attempts: 10 per 10 minutes per IP.
@@ -31,13 +32,17 @@ export async function POST(request: NextRequest) {
 
     const admin = await verifyAdmin(email, password)
     if (!admin) {
+      await logAudit(request, { id: 'anonymous', email: String(email) }, {
+        action: 'LOGIN_FAILED',
+        resource: 'admin',
+        summary: `Neuspešna prijava za ${email}`,
+      })
       return NextResponse.json(
         { error: 'Neispravni podaci za prijavljivanje' },
         { status: 401 },
       )
     }
 
-    // Record last-login timestamp for audit purposes.
     try {
       await prisma.admin.update({
         where: { id: admin.id },
@@ -46,6 +51,13 @@ export async function POST(request: NextRequest) {
     } catch {
       /* non-fatal */
     }
+
+    await logAudit(request, { id: admin.id, email: admin.email }, {
+      action: 'LOGIN',
+      resource: 'admin',
+      resourceId: admin.id,
+      summary: 'Prijava uspešna',
+    })
 
     const token = signAdminToken({
       id: admin.id,

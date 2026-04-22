@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { handlePrismaError, requireField } from '@/lib/admin-errors'
 import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 import { slugify } from '@/lib/slugify'
+import { logAudit } from '@/lib/audit-log'
 
 export async function GET(request: NextRequest) {
   const adminOrResp = requireAdmin(request)
@@ -97,6 +98,12 @@ export async function POST(request: NextRequest) {
     })
 
     refreshSnapshotAsync('products')
+    await logAudit(request, adminOrResp, {
+      action: 'CREATE',
+      resource: 'product',
+      resourceId: product.id,
+      summary: `Kreiran proizvod: ${product.name}`,
+    })
 
     return NextResponse.json(
       {
