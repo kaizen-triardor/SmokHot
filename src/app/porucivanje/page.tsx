@@ -38,7 +38,7 @@ export default function PorucivanjePage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
 
   // Delivery cost settings
-  const DELIVERY_COST = 300 // RSD
+  const DELIVERY_COST = 500 // RSD
   const FREE_DELIVERY_THRESHOLD = 3000 // RSD
 
   useEffect(() => {

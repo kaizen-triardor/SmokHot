@@ -152,7 +152,7 @@ async function main() {
 
   // ============ SETTINGS ============
   const settingsData = [
-    { key: 'delivery_cost', value: '300' },
+    { key: 'delivery_cost', value: '500' },
     { key: 'free_delivery_threshold', value: '3000' },
     { key: 'shop_status', value: 'active' },
     { key: 'payment_cod', value: 'true' },

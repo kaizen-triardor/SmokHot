@@ -87,7 +87,7 @@ export default function KorpaPage() {
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0)
 
   // Delivery cost settings
-  const DELIVERY_COST = 300
+  const DELIVERY_COST = 500
   const FREE_DELIVERY_THRESHOLD = 3000
 
   // Heat level styling — Tailwind JIT requires complete class names (no template interpolation).
