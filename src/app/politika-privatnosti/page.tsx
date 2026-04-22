@@ -46,8 +46,6 @@ export default function PolitikaPrivatnostiPage() {
                   <li><strong>Adresa:</strong> Srednjokrajska 23D, Barajevo, 11000 Beograd, Srbija</li>
                   <li><strong>Email:</strong> <a href="mailto:smokinhotcollective@gmail.com" className="text-fire-500 hover:underline">smokinhotcollective@gmail.com</a></li>
                   <li><strong>Telefon:</strong> +381 63 644 599</li>
-                  <li><strong>PIB:</strong> <em className="text-white/50">(biće dodato nakon registracije)</em></li>
-                  <li><strong>Matični broj:</strong> <em className="text-white/50">(biće dodato nakon registracije)</em></li>
                 </ul>
               </div>
 
