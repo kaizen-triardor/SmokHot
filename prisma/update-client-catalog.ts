@@ -191,7 +191,7 @@ async function main() {
     await prisma.content.upsert({
       where: { key: c.key },
       update: { content: c.value, section: c.section, type: c.type, title: c.title },
-      create: c.key ? { key: c.key, content: c.value, section: c.section, type: c.type, title: c.title } : c,
+      create: { key: c.key, content: c.value, section: c.section, type: c.type, title: c.title },
     })
   }
   console.log(`\n✅ ${contacts.length} contact/brand entries upserted`)

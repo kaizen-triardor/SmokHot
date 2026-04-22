@@ -284,7 +284,7 @@ export default function KontaktPage() {
                     <button
                       onClick={() => {
                         setSubmitted(false)
-                        setForm({ firstName: '', lastName: '', email: '', phone: '', queryType: '', message: '' })
+                        setForm({ entityType: 'individual', companyName: '', firstName: '', lastName: '', email: '', phone: '', queryType: '', message: '' })
                       }}
                       className="border-2 border-white/20 px-6 py-3 font-bold uppercase tracking-[0.1em] text-white transition hover:bg-white/5"
                     >

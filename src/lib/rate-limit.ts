@@ -56,11 +56,11 @@ export function checkRateLimit(key: string, opts: RateLimitOptions): RateLimitRe
 export function sweepRateLimits(): number {
   const now = Date.now()
   let removed = 0
-  for (const [k, b] of buckets.entries()) {
+  buckets.forEach((b, k) => {
     if (b.resetAt <= now) {
       buckets.delete(k)
       removed++
     }
-  }
+  })
   return removed
 }
