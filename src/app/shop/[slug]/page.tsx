@@ -168,11 +168,7 @@ export default function ProductDetailPage() {
               {/* Product Image */}
               <div>
                 <div className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 relative overflow-hidden">
-                  {/* Heat badge */}
-                  <div className={`absolute right-6 top-6 ${heatBadgeColors[product.heatLevel]} flex h-16 w-16 items-center justify-center rounded-full text-lg font-black text-white shadow-lg z-10`}>
-                    {product.heatNumber}
-                  </div>
-                  {/* Product Image */}
+                  {/* Product Image (heat badge shown only in the right info panel to avoid duplication) */}
                   {product.mainImage ? (
                     <img
                       src={product.mainImage}
