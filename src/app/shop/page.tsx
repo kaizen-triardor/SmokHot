@@ -140,8 +140,9 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
 
   return (
     <div className={`group relative rounded-3xl border-2 ${heatConf.border} bg-gradient-to-br from-surface to-primary-950 p-6 transition-all hover:-translate-y-2 hover:${heatConf.glow}`}>
-      {/* Heat Badge */}
-      <div className="absolute -right-3 -top-3">
+      {/* Heat Badge — z-20 keeps it above the image's hover:scale transform,
+          which creates a new stacking context and would otherwise paint over the badge */}
+      <div className="absolute -right-3 -top-3 z-20">
         <div className={`${heatConf.color} flex h-16 w-16 items-center justify-center rounded-full text-[10px] font-black uppercase leading-tight tracking-[0.05em] text-white shadow-lg text-center`}>
           {heatBadgeLabel[product.heatLevel] || product.heatLevel}
         </div>
