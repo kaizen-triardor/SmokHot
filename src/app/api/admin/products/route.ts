@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'smokin-hot-secret-key-change-in-production'
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
 function verifyToken(token: string): boolean {
   try {
@@ -35,14 +35,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('_start') || '0')
     const limit = parseInt(searchParams.get('_end') || '10') - page
-    const sortField = searchParams.get('_sort') || 'createdAt'
-    const sortOrder = searchParams.get('_order') || 'DESC'
+    const allowedSortFields = ['createdAt', 'name', 'price', 'heatNumber', 'stockCount', 'updatedAt']
+    const rawSortField = searchParams.get('_sort') || 'createdAt'
+    const sortField = allowedSortFields.includes(rawSortField) ? rawSortField : 'createdAt'
+    const sortOrder = searchParams.get('_order') === 'ASC' ? 'asc' : 'desc'
 
     const products = await prisma.product.findMany({
       skip: page,
       take: limit,
       orderBy: {
-        [sortField]: sortOrder.toLowerCase()
+        [sortField]: sortOrder
       }
     })
 
@@ -57,8 +59,8 @@ export async function GET(request: NextRequest) {
       blurb: product.blurb,
       heatLevel: product.heatLevel,
       heatNumber: product.heatNumber,
-      price: product.price / 100, // Convert from cents to RSD
-      originalPrice: product.originalPrice ? product.originalPrice / 100 : null,
+      price: product.price,
+      originalPrice: product.originalPrice ?? null,
       volume: product.volume,
       scoville: product.scoville,
       inStock: product.inStock,
@@ -99,8 +101,9 @@ export async function POST(request: NextRequest) {
         blurb: body.blurb || '',
         heatLevel: body.heatLevel,
         heatNumber: body.heatNumber,
-        price: Math.round(body.price * 100), // Convert to cents
-        originalPrice: body.originalPrice ? Math.round(body.originalPrice * 100) : null,
+        price: Math.round(body.price),
+        originalPrice: body.originalPrice ? Math.round(body.originalPrice) : null,
+        mainImage: body.mainImage || null,
         volume: body.volume || '150ml',
         scoville: body.scoville,
         inStock: body.inStock ?? true,

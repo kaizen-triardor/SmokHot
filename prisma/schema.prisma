@@ -114,6 +114,54 @@ model Admin {
   @@map("admins")
 }
 
+// Blog Posts
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // HTML or markdown content
+  excerpt     String   // Short preview text
+  coverImage  String?  // Image URL/path
+  published   Boolean  @default(false)
+  author      String   @default("SmokHot")
+  tags        String?  // JSON array of tags
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("blog_posts")
+}
+
+// Gallery Images
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  category    String   @default("general") // 'events', 'products', 'customers', 'food'
+  featured    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("gallery_images")
+}
+
+// Tour Events (Turneja)
+model TourEvent {
+  id          String   @id @default(cuid())
+  title       String
+  location    String
+  date        DateTime
+  time        String   // e.g., "09:00 - 15:00"
+  status      String   @default("upcoming") // 'upcoming', 'past', 'cancelled'
+  highlight   String?  // Summary of past event
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tour_events")
+}
+
 // Settings Management
 model Setting {
   id    String @id @default(cuid())

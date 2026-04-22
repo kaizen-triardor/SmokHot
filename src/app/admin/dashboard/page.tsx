@@ -3,11 +3,21 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+interface RecentOrder {
+  id: string
+  orderNumber: string
+  items: string
+  totalAmount: number
+  status: string
+  createdAt: string
+}
+
 interface DashboardStats {
   totalProducts: number
   totalOrders: number
   pendingOrders: number
   lowStockProducts: number
+  recentOrders: RecentOrder[]
 }
 
 export default function AdminDashboard() {
@@ -151,7 +161,7 @@ export default function AdminDashboard() {
           ].map((action, i) => (
             <Link
               key={i}
-              href={action.href}
+              href={action.href as any}
               className="group block rounded-2xl border border-white/10 bg-surface/50 p-6 transition-all duration-300 hover:scale-105 hover:bg-surface/70"
             >
               <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${action.color}`}>
@@ -171,57 +181,54 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Orders */}
       <div>
-        <h2 className="mb-6 text-xl font-bold text-white">Poslednja aktivnost</h2>
-        
+        <h2 className="mb-6 text-xl font-bold text-white">Poslednje porudžbine</h2>
+
         <div className="rounded-2xl border border-white/10 bg-surface/50 p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 rounded-xl bg-black/20 p-4">
-              <div className="h-2 w-2 rounded-full bg-warning-400"></div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-white">
-                  Nova porudžbina #SH-001
-                </div>
-                <div className="text-xs text-white/60">
-                  2x Gecko Mild, 1x Fireant Hot • 1,830 RSD
-                </div>
-              </div>
-              <div className="text-xs text-white/50">
-                Pre 2 sata
-              </div>
+          {stats?.recentOrders && stats.recentOrders.length > 0 ? (
+            <div className="space-y-4">
+              {stats.recentOrders.map((order) => {
+                const statusColors: Record<string, string> = {
+                  pending: 'bg-warning-400',
+                  confirmed: 'bg-blue-400',
+                  shipped: 'bg-ember-400',
+                  delivered: 'bg-mild-400',
+                  cancelled: 'bg-red-400',
+                }
+                let itemSummary = ''
+                try {
+                  const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+                  itemSummary = items.map((i: { name?: string; quantity?: number }) =>
+                    `${i.quantity || 1}x ${i.name || 'Proizvod'}`
+                  ).join(', ')
+                } catch { itemSummary = 'Detalji porudžbine' }
+
+                const date = new Date(order.createdAt)
+                const timeAgo = Math.floor((Date.now() - date.getTime()) / 3600000)
+                const timeStr = timeAgo < 1 ? 'Upravo' : timeAgo < 24 ? `Pre ${timeAgo}h` : `Pre ${Math.floor(timeAgo / 24)} dana`
+
+                return (
+                  <div key={order.id} className="flex items-center gap-4 rounded-xl bg-black/20 p-4">
+                    <div className={`h-2 w-2 rounded-full ${statusColors[order.status] || 'bg-white/40'}`}></div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-white">
+                        Porudžbina #{order.orderNumber}
+                      </div>
+                      <div className="text-xs text-white/60">
+                        {itemSummary} • {order.totalAmount.toLocaleString()} RSD
+                      </div>
+                    </div>
+                    <div className="text-xs text-white/50">{timeStr}</div>
+                  </div>
+                )
+              })}
             </div>
-            
-            <div className="flex items-center gap-4 rounded-xl bg-black/20 p-4">
-              <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-white">
-                  Proizvod ažuriran
-                </div>
-                <div className="text-xs text-white/60">
-                  Firefly Extra Hot - cena promenjena na 720 RSD
-                </div>
-              </div>
-              <div className="text-xs text-white/50">
-                Pre 5 sati
-              </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-white/50">Još nema porudžbina</p>
             </div>
-            
-            <div className="flex items-center gap-4 rounded-xl bg-black/20 p-4">
-              <div className="h-2 w-2 rounded-full bg-red-400"></div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-white">
-                  Malo zaliha upozorenje
-                </div>
-                <div className="text-xs text-white/60">
-                  Green Fury - ostalo samo 8 komada
-                </div>
-              </div>
-              <div className="text-xs text-white/50">
-                Pre 1 dan
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

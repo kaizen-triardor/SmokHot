@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { verifyAdmin } from '@/lib/auth'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'smokin-hot-jwt-secret'
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
+if (!JWT_SECRET) {
+  console.error('WARNING: NEXTAUTH_SECRET environment variable is not set')
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,11 +59,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Middleware to verify JWT token
-export function verifyToken(token: string) {
-  try {
-    return jwt.verify(token, JWT_SECRET) as any
-  } catch {
-    return null
-  }
-}

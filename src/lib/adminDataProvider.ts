@@ -3,8 +3,8 @@ import { DataProvider } from 'react-admin'
 // Custom data provider for React Admin with authentication
 export const adminDataProvider: DataProvider = {
   getList: async (resource, params) => {
-    const { page, perPage } = params.pagination
-    const { field, order } = params.sort
+    const { page, perPage } = params.pagination!
+    const { field, order } = params.sort!
     
     const query = new URLSearchParams({
       _start: ((page - 1) * perPage).toString(),
@@ -174,7 +174,7 @@ export const adminDataProvider: DataProvider = {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     
-    return { data: params.previousData }
+    return { data: params.previousData as any }
   },
 
   deleteMany: async (resource, params) => {

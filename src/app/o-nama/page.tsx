@@ -83,14 +83,14 @@ export default function ONamaPage() {
                 
                 <div className="space-y-4 text-white/70">
                   <p>
-                    Smokin' Hot nije nastao u korporativnim kuhinjama. Rodio se u podrumu, 
+                    Smokin&apos; Hot nije nastao u korporativnim kuhinjama. Rodio se u podrumu,
                     među rockovima i ljubiteljima pravog ukusa koji su se borili protiv 
                     dominacije bljutavih sosova.
                   </p>
                   
                   <p>
-                    Počelo je sa jednim pitanjem: "Zašto srpski ljuti sosovi ne mogu da budu 
-                    jednako dobri kao meksički?" Odgovor je stigao kroz mesece eksperimenata, 
+                    Počelo je sa jednim pitanjem: &quot;Zašto srpski ljuti sosovi ne mogu da budu
+                    jednako dobri kao meksički?&quot; Odgovor je stigao kroz mesece eksperimenata,
                     opekotina i perfektovanja receptura.
                   </p>
                   
@@ -103,9 +103,9 @@ export default function ONamaPage() {
 
               {/* Quote */}
               <blockquote className="border-l-4 border-ember-500 pl-6 italic text-white/80">
-                "Ljutina nije kazna, već oslobođenje od dosadnih obroka."
+                &quot;Ljutina nije kazna, već oslobođenje od dosadnih obroka.&quot;
                 <footer className="mt-2 text-sm font-bold text-ember-500">
-                  — Osnivači Smokin' Hot-a
+                  — Osnivači Smokin&apos; Hot-a
                 </footer>
               </blockquote>
             </div>

@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { products } from '@/data/products'
 import { TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline'
 
 interface CartItem {
@@ -12,8 +11,10 @@ interface CartItem {
 
 export default function KorpaPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  
-  // Load cart from localStorage on component mount
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load cart from localStorage and fetch products on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('smokhot-cart')
     if (savedCart) {
@@ -26,11 +27,22 @@ export default function KorpaPage() {
       }
     }
     setIsInitialLoad(false)
+
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        setProducts(Array.isArray(data) ? data : data.products || [])
+      })
+      .catch(err => {
+        console.error('Error fetching products:', err)
+        setProducts([])
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   // Save cart to localStorage whenever cart changes (but skip if it's initial empty load)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
-  
+
   useEffect(() => {
     if (!isInitialLoad) {
       localStorage.setItem('smokhot-cart', JSON.stringify(cartItems))
@@ -42,10 +54,10 @@ export default function KorpaPage() {
       removeItem(productId)
       return
     }
-    
-    setCartItems(prev => 
-      prev.map(item => 
-        item.productId === productId 
+
+    setCartItems(prev =>
+      prev.map(item =>
+        item.productId === productId
           ? { ...item, quantity: newQuantity }
           : item
       )
@@ -74,13 +86,25 @@ export default function KorpaPage() {
 
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0)
 
+  // Delivery cost settings
+  const DELIVERY_COST = 300
+  const FREE_DELIVERY_THRESHOLD = 3000
+
   const heatLevelColors = {
     1: 'bg-mild-500',
-    2: 'bg-warning-500', 
+    2: 'bg-warning-500',
     3: 'bg-ember-500',
     4: 'bg-fire-500',
     5: 'bg-red-600',
     6: 'bg-red-800'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7] flex items-center justify-center">
+        <p className="text-lg text-white/70">Učitavanje...</p>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +125,7 @@ export default function KorpaPage() {
                 Korpa
               </h1>
               <p className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
-                {totalItems > 0 
+                {totalItems > 0
                   ? `${totalItems} ${totalItems === 1 ? 'proizvod' : totalItems < 5 ? 'proizvoda' : 'proizvoda'} spreman za vatru`
                   : 'Tvoja korpa je prazna - vreme je da je zapališ!'
                 }
@@ -121,14 +145,14 @@ export default function KorpaPage() {
                   </svg>
                 </div>
               </div>
-              
+
               <h2 className="mb-4 text-3xl font-bold text-white">
                 Korpa je prazna kao nepce posle blagog sosa
               </h2>
               <p className="mb-8 text-white/70">
                 Vreme je da dodaš nešto što će zapaliti tvoje obrroke!
               </p>
-              
+
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                 <Link
                   href="/shop"
@@ -194,14 +218,14 @@ export default function KorpaPage() {
                                 <div>
                                   <h3 className="text-xl font-bold text-white">{product.name}</h3>
                                   <p className="mt-1 text-sm text-white/70">{product.blurb}</p>
-                                  
+
                                   {/* Heat Level */}
                                   <div className="mt-3 flex items-center gap-3">
                                     <div className={`${heatColor} flex h-8 w-8 items-center justify-center rounded-full text-xs font-black text-white`}>
-                                      {product.heatLevel}
+                                      {product.heatNumber}
                                     </div>
                                     <span className="text-xs font-bold uppercase tracking-[0.1em] text-white/50">
-                                      {product.heatLevel <= 2 ? 'Blago' : product.heatLevel <= 3 ? 'Ljuto' : 'Ekstremno'}
+                                      {product.heatNumber <= 1 ? 'Blago' : product.heatNumber <= 2 ? 'Ljuto' : product.heatNumber <= 3 ? 'Jako ljuto' : 'Ekstremno'}
                                     </span>
                                   </div>
                                 </div>
@@ -258,7 +282,7 @@ export default function KorpaPage() {
                   <div className="sticky top-24">
                     <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-8">
                       <h3 className="mb-6 text-2xl font-bold text-white">Pregled porudžbine</h3>
-                      
+
                       {/* Order Items */}
                       <div className="mb-6 space-y-3">
                         {cartItems.map((item) => {
@@ -280,14 +304,28 @@ export default function KorpaPage() {
 
                       {/* Total */}
                       <div className="mb-8 border-t border-white/10 pt-4">
+                        <div className="mb-2 flex justify-between text-sm text-white/70">
+                          <span>Dostava:</span>
+                          <span>
+                            {calculateTotal() >= FREE_DELIVERY_THRESHOLD
+                              ? <span className="text-mild-500 font-bold">Besplatna</span>
+                              : `${DELIVERY_COST} RSD`
+                            }
+                          </span>
+                        </div>
                         <div className="flex justify-between text-lg">
                           <span className="font-bold text-white">Ukupno:</span>
                           <span className="text-2xl font-black text-ember-500">
-                            {calculateTotal().toLocaleString()} RSD
+                            {(calculateTotal() + (calculateTotal() >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_COST)).toLocaleString()} RSD
                           </span>
                         </div>
+                        {calculateTotal() < FREE_DELIVERY_THRESHOLD && (
+                          <p className="mt-2 text-xs text-mild-500">
+                            Dodaj još {(FREE_DELIVERY_THRESHOLD - calculateTotal()).toLocaleString()} RSD za besplatnu dostavu!
+                          </p>
+                        )}
                         <p className="mt-2 text-xs text-white/50">
-                          Dostava + plaćanje pouzećem
+                          Plaćanje pouzećem
                         </p>
                       </div>
 
@@ -332,7 +370,7 @@ export default function KorpaPage() {
             <p className="mb-8 text-white/70">
               Možda ti je potreban još jedan sos za kompletnu kolekciju?
             </p>
-            
+
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/shop"

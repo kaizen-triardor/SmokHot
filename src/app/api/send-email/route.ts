@@ -1,13 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 // import nodemailer from 'nodemailer'
 
+// Simple rate limiter: max 10 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + 60000 })
+    return true
+  }
+  if (entry.count >= 10) return false
+  entry.count++
+  return true
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { success: false, error: 'Previše zahteva. Pokušajte ponovo za minut.' },
+        { status: 429 }
+      )
+    }
+
     const { to, subject, body } = await request.json()
+
+    // Validate required fields
+    if (!subject || !body) {
+      return NextResponse.json(
+        { success: false, error: 'Subject and body are required' },
+        { status: 400 }
+      )
+    }
 
     const emailData = {
       from: 'SmokHot Website <noreply@smokhot.rs>',
-      to: to || 'kaizen.triardor@gmail.com',
+      to: process.env.ORDER_EMAIL || 'info@smokhot.rs',
       subject: subject || 'Nova porudžbina',
       body: body,
       timestamp: new Date().toISOString()

@@ -114,7 +114,7 @@ export default function AdminLogin() {
             </form>
 
             <div className="mt-6 text-xs text-white/50 text-center">
-              Default: admin@smokhot.rs / SmokinHot2024!
+              Smokin&apos; Hot CMS &copy; 2026
             </div>
           </div>
         </div>

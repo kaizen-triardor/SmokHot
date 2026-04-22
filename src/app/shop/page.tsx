@@ -1,12 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { products } from '@/data/products'
 import { PlusIcon } from '@heroicons/react/24/outline'
 
 // Heat level configuration for visual progression
-const heatConfig = [
+const allHeatConfig = [
   { level: 1, name: 'Blago', color: 'bg-mild-500', glow: 'shadow-[0_0_15px_rgba(152,184,60,0.3)]' },
   { level: 2, name: 'Ljuto', color: 'bg-warning-500', glow: 'shadow-[0_0_20px_rgba(255,212,0,0.4)]' },
   { level: 3, name: 'Jako ljuto', color: 'bg-ember-500', glow: 'shadow-[0_0_25px_rgba(255,106,0,0.5)]' },
@@ -15,21 +14,29 @@ const heatConfig = [
   { level: 6, name: 'Smrtonosno', color: 'bg-red-800', glow: 'shadow-[0_0_40px_rgba(153,27,27,0.8)]' },
 ]
 
-function ProductCard({ product }: { product: any }) {
+// Short badge labels that fit inside the circle
+const heatBadgeLabel: Record<string, string> = {
+  'mild': 'MILD',
+  'hot': 'HOT',
+  'extra-hot': 'X-HOT',
+  'smokin-hot': 'XX-HOT',
+}
+
+function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof allHeatConfig }) {
   const [isAdding, setIsAdding] = useState(false)
-  const heatConf = heatConfig[product.heatNumber - 1] || heatConfig[0]
+  const heatConf = heatConfig.find(h => h.level === product.heatNumber) || heatConfig[0]
 
   const addToCart = async () => {
     setIsAdding(true)
-    
+
     try {
       // Get existing cart
       const existingCart = localStorage.getItem('smokhot-cart')
       const cartItems = existingCart ? JSON.parse(existingCart) : []
-      
+
       // Find existing item
       const existingItemIndex = cartItems.findIndex((item: any) => item.productId === product.slug)
-      
+
       if (existingItemIndex >= 0) {
         // Update quantity
         cartItems[existingItemIndex].quantity += 1
@@ -40,40 +47,48 @@ function ProductCard({ product }: { product: any }) {
           quantity: 1
         })
       }
-      
+
       // Save to localStorage
       localStorage.setItem('smokhot-cart', JSON.stringify(cartItems))
-      
+
       // Trigger cart update event
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('cartUpdated'))
       }
-      
+
       setTimeout(() => setIsAdding(false), 500)
-      
+
     } catch (error) {
       console.error('Error adding to cart:', error)
       setIsAdding(false)
     }
   }
-  
+
   return (
     <div className={`group relative rounded-3xl border-2 border-${heatConf.color}/30 bg-gradient-to-br from-surface to-primary-950 p-6 transition-all hover:-translate-y-2 hover:${heatConf.glow}`}>
       {/* Heat Badge */}
       <div className="absolute -right-3 -top-3">
-        <div className={`${heatConf.color} flex h-16 w-16 items-center justify-center rounded-full text-xs font-black uppercase tracking-[0.1em] text-white shadow-lg`}>
-          {product.heatLevel}
+        <div className={`${heatConf.color} flex h-16 w-16 items-center justify-center rounded-full text-[10px] font-black uppercase leading-tight tracking-[0.05em] text-white shadow-lg text-center`}>
+          {heatBadgeLabel[product.heatLevel] || product.heatLevel}
         </div>
       </div>
 
-      {/* Product Image Placeholder */}
-      <div className="mb-6 aspect-square rounded-2xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-8">
-        <div className="grid h-full grid-cols-2 gap-4">
-          <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/60 to-${heatConf.color}/40`} />
-          <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
-          <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
-          <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/20 to-${heatConf.color}/10`} />
-        </div>
+      {/* Product Image */}
+      <div className="mb-6 aspect-square rounded-2xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 overflow-hidden">
+        {product.mainImage ? (
+          <img
+            src={product.mainImage}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
+        ) : (
+          <div className="grid h-full grid-cols-2 gap-4 p-8">
+            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/60 to-${heatConf.color}/40`} />
+            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
+            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
+            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/20 to-${heatConf.color}/10`} />
+          </div>
+        )}
       </div>
 
       {/* Product Info */}
@@ -112,30 +127,57 @@ function ProductCard({ product }: { product: any }) {
         >
           Detalji
         </Link>
-        
-        <button 
-          onClick={addToCart}
-          disabled={isAdding}
-          className="flex items-center justify-center rounded-xl border-2 border-ember-500 bg-ember-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-ember-600 disabled:opacity-50"
-        >
-          <PlusIcon className="h-4 w-4 mr-1" />
-          {isAdding ? 'Dodaje...' : 'U korpu'}
-        </button>
-      </div>
 
-      {/* Stock Status */}
-      {!product.inStock && (
-        <div className="absolute inset-0 rounded-3xl bg-black/80 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">Nema na stanju</span>
-        </div>
-      )}
+        {product.inStock ? (
+          <button
+            onClick={addToCart}
+            disabled={isAdding}
+            className="flex items-center justify-center rounded-xl border-2 border-ember-500 bg-ember-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-ember-600 disabled:opacity-50"
+          >
+            <PlusIcon className="h-4 w-4 mr-1" />
+            {isAdding ? 'Dodaje...' : 'U korpu'}
+          </button>
+        ) : (
+          <div className="flex items-center justify-center rounded-xl border-2 border-red-700 bg-red-700 px-4 py-3 text-sm font-bold uppercase tracking-wider text-white cursor-not-allowed">
+            Nema na stanju
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export default function ShopPage() {
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        setProducts(Array.isArray(data) ? data : data.products || [])
+      })
+      .catch(err => {
+        console.error('Error fetching products:', err)
+        setProducts([])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  // Only show heat levels that have products
+  const usedHeatLevels = new Set(products.map(p => p.heatNumber))
+  const heatConfig = allHeatConfig.filter(h => usedHeatLevels.has(h.level))
+
   // Sort products by heat level
-  const sortedProducts = [...products].sort((a, b) => a.heatLevel - b.heatLevel)
+  const sortedProducts = [...products].sort((a, b) => a.heatNumber - b.heatNumber)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7] flex items-center justify-center">
+        <p className="text-lg text-white/70">Učitavanje...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7]">
@@ -155,7 +197,7 @@ export default function ShopPage() {
               Shop
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-white/70">
-              Izaberi svoj nivo haosa. Od blagog gecko-ja do paklenog jackal-a - 
+              Izaberi svoj nivo haosa. Od blagog gecko-ja do paklenog jackal-a -
               svaki sos je ručno napravljen sa ljubavlju i vatrom.
             </p>
           </div>
@@ -163,12 +205,13 @@ export default function ShopPage() {
       </section>
 
       {/* Heat Scale Reference */}
+      {heatConfig.length > 0 && (
       <section className="border-b border-white/8 bg-surface py-12">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-4">Skala ljutine</h2>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-4">
             {heatConfig.map((heat) => (
               <div key={heat.level} className="flex items-center gap-2">
@@ -181,15 +224,22 @@ export default function ShopPage() {
           </div>
         </div>
       </section>
+      )}
 
         {/* Products Grid */}
         <section className="py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-6">
+          {sortedProducts.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-lg text-white/70">Nema dostupnih proizvoda.</p>
+            </div>
+          ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {sortedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} heatConfig={heatConfig} />
             ))}
           </div>
+          )}
         </div>
       </section>
 
@@ -202,7 +252,7 @@ export default function ShopPage() {
           <p className="text-lg text-white/70 mb-8">
             Nema rizika, nema čekanja. Naruči sada, plati kada pakovanje stigne na vrata.
           </p>
-          
+
           <div className="flex flex-wrap justify-center gap-8 text-sm">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-ember-500" />

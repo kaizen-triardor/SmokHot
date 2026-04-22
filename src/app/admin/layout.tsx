@@ -21,9 +21,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       router.push('/admin')
       return
     }
-    
-    setIsAuthenticated(!!token)
-    setLoading(false)
+
+    if (token && pathname !== '/admin') {
+      // Verify token server-side
+      fetch('/api/admin/dashboard', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => {
+        if (!res.ok) {
+          localStorage.removeItem('admin-token')
+          router.push('/admin')
+          return
+        }
+        setIsAuthenticated(true)
+        setLoading(false)
+      }).catch(() => {
+        localStorage.removeItem('admin-token')
+        router.push('/admin')
+      })
+    } else {
+      setIsAuthenticated(!!token)
+      setLoading(false)
+    }
   }, [router, pathname])
 
   const handleLogout = () => {
@@ -55,6 +73,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Proizvodi', href: '/admin/products', icon: '🌶️' },
     { name: 'Porudžbine', href: '/admin/orders', icon: '📦' },
     { name: 'Turneja', href: '/admin/turneja', icon: '🎤' },
+    { name: 'Blog', href: '/admin/blog', icon: '✍️' },
+    { name: 'Galerija', href: '/admin/galerija', icon: '🖼️' },
     { name: 'Sadržaj', href: '/admin/content', icon: '📝' },
     { name: 'Postavke', href: '/admin/settings', icon: '⚙️' },
   ]
@@ -85,7 +105,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {navigation.map((item) => (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={item.href as any}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
                     pathname === item.href
                       ? 'bg-ember-500 text-white'

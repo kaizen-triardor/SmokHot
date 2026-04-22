@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { prisma } from './prisma'
 
 export interface AdminUser {
@@ -51,4 +52,13 @@ export async function createAdmin(email: string, name: string, password: string,
 
 export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 12)
+}
+
+export function verifyToken(token: string) {
+  try {
+    const secret = process.env.NEXTAUTH_SECRET || ''
+    return jwt.verify(token, secret) as { id: string; email: string; role: string }
+  } catch {
+    return null
+  }
 }

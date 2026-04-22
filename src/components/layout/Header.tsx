@@ -48,6 +48,8 @@ export default function Header() {
   const navigation = [
     { name: 'Početna', href: '/' },
     { name: 'Shop', href: '/shop' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'Galerija', href: '/galerija' },
     { name: 'O Nama', href: '/o-nama' },
     { name: 'Kontakt', href: '/kontakt' },
   ]
@@ -69,7 +71,7 @@ export default function Header() {
             </div>
             <div className="text-left">
               <div className="text-xl font-black uppercase tracking-[0.12em] text-white font-display">
-                SMOKIN' HOT
+                SMOKIN&apos; HOT
               </div>
               <div className="text-xs font-bold uppercase tracking-[0.2em] text-[#ffd400]">
                 COLLECTIVE
@@ -95,7 +97,7 @@ export default function Header() {
           {navigation.map((item) => (
             <Link
               key={item.name}
-              href={item.href}
+              href={item.href as any}
               className={`text-sm font-bold uppercase tracking-[0.1em] transition ${
                 pathname === item.href
                   ? 'text-ember-500'
@@ -141,7 +143,7 @@ export default function Header() {
                   </div>
                   <div className="text-left">
                     <div className="text-lg font-black uppercase tracking-[0.12em] text-white font-display">
-                      SMOKIN' HOT
+                      SMOKIN&apos; HOT
                     </div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#ffd400]">
                       COLLECTIVE
@@ -164,7 +166,7 @@ export default function Header() {
                     {navigation.map((item) => (
                       <Link
                         key={item.name}
-                        href={item.href}
+                        href={item.href as any}
                         className={`-mx-3 block rounded-lg px-3 py-2 text-base font-bold uppercase tracking-[0.1em] transition ${
                           pathname === item.href
                             ? 'bg-ember-500 text-white'

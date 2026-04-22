@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { products } from '@/data/products'
 
 interface CartItem {
   productId: string
@@ -22,6 +21,8 @@ interface CustomerInfo {
 
 export default function PorucivanjePage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
@@ -36,6 +37,10 @@ export default function PorucivanjePage() {
   const [orderSubmitted, setOrderSubmitted] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
 
+  // Delivery cost settings
+  const DELIVERY_COST = 300 // RSD
+  const FREE_DELIVERY_THRESHOLD = 3000 // RSD
+
   useEffect(() => {
     const savedCart = localStorage.getItem('smokhot-cart')
     if (savedCart) {
@@ -45,6 +50,17 @@ export default function PorucivanjePage() {
         console.error('Error loading cart:', error)
       }
     }
+
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        setProducts(Array.isArray(data) ? data : data.products || [])
+      })
+      .catch(err => {
+        console.error('Error fetching products:', err)
+        setProducts([])
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const getProductDetails = (productId: string) => {
@@ -65,41 +81,41 @@ export default function PorucivanjePage() {
         if (value.trim().length < 2) return 'Ime mora imati najmanje 2 karaktera'
         if (!/^[a-zA-ZšđčćžŠĐČĆŽ\s]+$/.test(value)) return 'Ime može sadržavati samo slova'
         return ''
-      
+
       case 'lastName':
         if (!value.trim()) return 'Prezime je obavezno'
         if (value.trim().length < 2) return 'Prezime mora imati najmanje 2 karaktera'
         if (!/^[a-zA-ZšđčćžŠĐČĆŽ\s]+$/.test(value)) return 'Prezime može sadržavati samo slova'
         return ''
-      
+
       case 'email':
         if (!value.trim()) return 'Email je obavezan'
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(value)) return 'Email adresa nije ispravna'
         return ''
-      
+
       case 'phone':
         if (!value.trim()) return 'Telefon je obavezan'
         const phoneRegex = /^[\+]?[0-9\s\-\(\)]{8,15}$/
         if (!phoneRegex.test(value.replace(/\s/g, ''))) return 'Telefon nije u ispravnom formatu'
         return ''
-      
+
       case 'address':
         if (!value.trim()) return 'Adresa je obavezna'
         if (value.trim().length < 5) return 'Adresa mora imati najmanje 5 karaktera'
         return ''
-      
+
       case 'city':
         if (!value.trim()) return 'Grad je obavezan'
         if (value.trim().length < 2) return 'Grad mora imati najmanje 2 karaktera'
         if (!/^[a-zA-ZšđčćžŠĐČĆŽ\s\-]+$/.test(value)) return 'Grad može sadržavati samo slova'
         return ''
-      
+
       case 'postalCode':
         if (!value.trim()) return 'Poštanski broj je obavezan'
         if (!/^[0-9]{5}$/.test(value.trim())) return 'Poštanski broj mora imati 5 cifara'
         return ''
-      
+
       default:
         return ''
     }
@@ -107,14 +123,14 @@ export default function PorucivanjePage() {
 
   const validateAllFields = (): boolean => {
     const errors: {[key: string]: string} = {}
-    
+
     Object.entries(customerInfo).forEach(([key, value]) => {
       if (key !== 'note') { // Note is optional
         const error = validateField(key, value)
         if (error) errors[key] = error
       }
     })
-    
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -122,7 +138,7 @@ export default function PorucivanjePage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setCustomerInfo(prev => ({ ...prev, [name]: value }))
-    
+
     // Clear validation error for this field when user starts typing
     if (validationErrors[name]) {
       setValidationErrors(prev => ({ ...prev, [name]: '' }))
@@ -143,7 +159,7 @@ Poštanski broj: ${orderData.customer.postalCode}
 ${orderData.customer.note ? `Napomena: ${orderData.customer.note}` : ''}
 
 PORUČENI PROIZVODI:
-${orderData.items.map((item: any) => 
+${orderData.items.map((item: any) =>
   `- ${item.product.name} x ${item.quantity} = ${(item.product.price * item.quantity).toLocaleString()} RSD`
 ).join('\n')}
 
@@ -160,14 +176,14 @@ Način plaćanja: Pouzeće (poštar)
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          to: 'kaizen.triardor@gmail.com',
+          to: process.env.NEXT_PUBLIC_ORDER_EMAIL || 'info@smokhot.rs',
           subject: `Smokin' Hot - Nova Porudžbina #${orderData.orderNumber}`,
           body: emailContent
         })
       })
 
       const result = await response.json()
-      
+
       if (result.success) {
         console.log('✅ Email sent successfully:', result.data)
       } else {
@@ -192,8 +208,8 @@ Način plaćanja: Pouzeće (poštar)
 
     try {
       // Generate order number
-      const orderNumber = 'SH-' + Date.now().toString().slice(-6)
-      
+      const orderNumber = 'SH-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase()
+
       // Prepare order data
       const orderData = {
         orderNumber,
@@ -205,18 +221,45 @@ Način plaćanja: Pouzeće (poštar)
         total: calculateTotal(),
         timestamp: new Date().toISOString()
       }
-      
+
       // Send order email
       await sendOrderEmail(orderData)
-      
+
+      // Save order to database
+      const subtotal = calculateTotal()
+      const shippingCost = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_COST
+      try {
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+            customerPhone: customerInfo.phone,
+            customerAddress: `${customerInfo.address}, ${customerInfo.postalCode} ${customerInfo.city}`,
+            notes: customerInfo.note || null,
+            items: orderData.items.map((item: any) => ({
+              productId: item.productId,
+              name: item.product?.name,
+              price: item.product?.price,
+              quantity: item.quantity,
+            })),
+            totalAmount: subtotal + shippingCost,
+            shippingCost,
+          }),
+        })
+      } catch (dbError) {
+        // Don't block the order if DB save fails - email was already sent
+        console.error('Failed to save order to database:', dbError)
+      }
+
       // Clear cart and show success
       localStorage.removeItem('smokhot-cart')
       setOrderSubmitted(true)
       localStorage.setItem('last-order', orderNumber)
-      
+
       // Show success message
-      console.log('✅ Order created successfully:', orderNumber)
-      
+      console.log('Order created successfully:', orderNumber)
+
     } catch (error) {
       console.error('❌ Order submission failed:', error)
       alert('Greška pri slanju porudžbine na email. Molimo pokušajte ponovo ili kontaktirajte direktno +381 60 123 4567.')
@@ -225,12 +268,20 @@ Način plaćanja: Pouzeće (poštar)
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7] flex items-center justify-center">
+        <p className="text-lg text-white/70">Učitavanje...</p>
+      </div>
+    )
+  }
+
   if (cartItems.length === 0 && !orderSubmitted) {
     return (
       <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7]">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,89,0,0.22),transparent_30%),radial-gradient(circle_at_left,rgba(229,36,33,0.25),transparent_28%),linear-gradient(to_bottom,#0b0b0d,#111113)]" />
         <div className="fixed inset-0 opacity-[0.08] [background-image:radial-gradient(#ffffff_0.8px,transparent_0.8px)] [background-size:16px_16px]" />
-        
+
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="text-center">
             <h1 className="mb-4 text-4xl font-black uppercase text-white">Korpa je prazna</h1>
@@ -249,12 +300,12 @@ Način plaćanja: Pouzeće (poštar)
 
   if (orderSubmitted) {
     const orderNumber = localStorage.getItem('last-order') || 'SH-123456'
-    
+
     return (
       <div className="min-h-screen bg-[#0b0b0d] text-[#f6f1e7]">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,89,0,0.22),transparent_30%),radial-gradient(circle_at_left,rgba(229,36,33,0.25),transparent_28%),linear-gradient(to_bottom,#0b0b0d,#111113)]" />
         <div className="fixed inset-0 opacity-[0.08] [background-image:radial-gradient(#ffffff_0.8px,transparent_0.8px)] [background-size:16px_16px]" />
-        
+
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-8 text-center">
             <div className="mb-6 flex justify-center">
@@ -264,12 +315,12 @@ Način plaćanja: Pouzeće (poštar)
                 </svg>
               </div>
             </div>
-            
+
             <h1 className="mb-4 text-4xl font-black uppercase text-white">Porudžbina poslata!</h1>
             <p className="mb-6 text-lg text-white/70">
               Tvoja porudžbina je uspešno primljena. Dobićeš SMS potvrdu sa detaljima dostave.
             </p>
-            
+
             <div className="mb-8 rounded-2xl border border-warning-400/20 bg-warning-400/10 p-6">
               <div className="mb-2 text-sm font-bold uppercase tracking-[0.15em] text-warning-400">
                 Broj porudžbine
@@ -342,7 +393,7 @@ Način plaćanja: Pouzeće (poštar)
               {/* Order Form */}
               <div>
                 <h2 className="mb-8 text-2xl font-bold text-white">Podaci za dostavu</h2>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Personal Info */}
                   <div className="grid gap-6 sm:grid-cols-2">
@@ -355,8 +406,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.firstName 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.firstName
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="Marko"
@@ -374,8 +425,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.lastName 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.lastName
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="Petrović"
@@ -397,8 +448,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.email 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.email
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="marko@primer.com"
@@ -416,8 +467,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.phone 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.phone
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="060 123 4567"
@@ -438,8 +489,8 @@ Način plaćanja: Pouzeće (poštar)
                       onChange={handleInputChange}
                       required
                       className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                        validationErrors.address 
-                          ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                        validationErrors.address
+                          ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                           : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                       }`}
                       placeholder="Bulevar Oslobođenja 123"
@@ -459,8 +510,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.city 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.city
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="Beograd"
@@ -478,8 +529,8 @@ Način plaćanja: Pouzeće (poštar)
                         onChange={handleInputChange}
                         required
                         className={`w-full rounded-xl border px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 ${
-                          validationErrors.postalCode 
-                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20' 
+                          validationErrors.postalCode
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400 focus:ring-red-500/20'
                             : 'border-white/20 bg-primary-950/50 focus:border-ember-500 focus:ring-ember-500/20'
                         }`}
                         placeholder="11000"
@@ -530,7 +581,7 @@ Način plaćanja: Pouzeće (poštar)
                 <div className="sticky top-24">
                   <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-8">
                     <h3 className="mb-6 text-2xl font-bold text-white">Tvoja porudžbina</h3>
-                    
+
                     <div className="space-y-4">
                       {cartItems.map((item) => {
                         const product = getProductDetails(item.productId)
@@ -561,12 +612,24 @@ Način plaćanja: Pouzeće (poštar)
                       </div>
                       <div className="mb-2 flex justify-between text-sm text-white/70">
                         <span>+ Dostava:</span>
-                        <span>Na dopremanje</span>
+                        <span>
+                          {calculateTotal() >= FREE_DELIVERY_THRESHOLD
+                            ? <span className="text-mild-500 font-bold">Besplatna</span>
+                            : `${DELIVERY_COST} RSD`
+                          }
+                        </span>
                       </div>
                       <div className="flex justify-between text-xl font-bold">
                         <span className="text-white">Ukupno:</span>
-                        <span className="text-ember-500">{calculateTotal().toLocaleString()} RSD</span>
+                        <span className="text-ember-500">
+                          {(calculateTotal() + (calculateTotal() >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_COST)).toLocaleString()} RSD
+                        </span>
                       </div>
+                      {calculateTotal() < FREE_DELIVERY_THRESHOLD && (
+                        <p className="mt-2 text-xs text-mild-500">
+                          Dodaj još {(FREE_DELIVERY_THRESHOLD - calculateTotal()).toLocaleString()} RSD za besplatnu dostavu!
+                        </p>
+                      )}
                       <p className="mt-2 text-xs text-white/50">
                         Plaćanje pouzećem - bez troškova unapred
                       </p>

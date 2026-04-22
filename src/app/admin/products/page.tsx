@@ -1,72 +1,136 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { products as initialProducts } from '@/data/products'
-import { Product } from '@/types/product'
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
+interface ProductData {
+  id: string
+  name: string
+  slug: string
+  blurb: string
+  description: string
+  heatLevel: string
+  heatNumber: number
+  price: number
+  originalPrice?: number | null
+  volume: string
+  scoville?: number | null
+  ingredients: string[]
+  pairings: string[]
+  categories: string[]
+  mainImage: string | null
+  featured: boolean
+  inStock: boolean
+  stockCount: number
+}
+
 export default function ProductsAdmin() {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [products, setProducts] = useState<ProductData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingProduct, setEditingProduct] = useState<ProductData | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const getToken = () => localStorage.getItem('admin-token') || ''
+
+  // Fetch products from database
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/admin/products?_start=0&_end=100&_sort=heatNumber&_order=ASC', {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setProducts(data)
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: ProductData) => {
     setEditingProduct(product)
     setShowForm(true)
   }
 
-  const handleDelete = (productId: string) => {
-    if (confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')) {
-      setProducts(prev => prev.filter(p => p.id !== productId))
+  const handleDelete = async (productId: string) => {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')) return
+
+    try {
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      })
+      if (res.ok) {
+        await fetchProducts()
+      } else {
+        alert('Greška pri brisanju proizvoda')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Greška pri brisanju proizvoda')
     }
   }
 
-  const handleSave = (productData: Partial<Product>) => {
-    if (editingProduct) {
-      // Update existing
-      setProducts(prev => prev.map(p => 
-        p.id === editingProduct.id ? { ...p, ...productData } : p
-      ))
-    } else {
-      // Create new
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        slug: productData.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || '',
-        inStock: true,
-        featured: false,
-        stockCount: 100,
-        images: {
-          main: '/images/products/default-product.jpg',
-          gallery: ['/images/products/default-product.jpg'],
-          thumbnail: '/images/products/default-product.jpg'
-        },
-        nutritionInfo: {
-          calories: 5,
-          fat: 0,
-          carbs: 1,
-          protein: 0,
-          sodium: 150
-        },
-        category: ['Ljuti sosovi'],
-        ...productData,
-      } as Product
-      
-      setProducts(prev => [...prev, newProduct])
+  const handleSave = async (productData: Record<string, unknown>) => {
+    setSaving(true)
+    try {
+      if (editingProduct) {
+        // Update existing
+        const res = await fetch(`/api/admin/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(productData)
+        })
+        if (!res.ok) {
+          alert('Greška pri čuvanju izmena')
+          return
+        }
+      } else {
+        // Create new
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(productData)
+        })
+        if (!res.ok) {
+          alert('Greška pri dodavanju proizvoda')
+          return
+        }
+      }
+
+      await fetchProducts()
+      setEditingProduct(null)
+      setShowForm(false)
+    } catch (error) {
+      console.error('Save error:', error)
+      alert('Greška pri čuvanju')
+    } finally {
+      setSaving(false)
     }
-    
-    setEditingProduct(null)
-    setShowForm(false)
   }
 
   const ProductForm = ({ product, onSave, onCancel }: {
-    product?: Product | null,
-    onSave: (data: Partial<Product>) => void,
+    product?: ProductData | null,
+    onSave: (data: Record<string, unknown>) => void,
     onCancel: () => void
   }) => {
     const [formData, setFormData] = useState({
@@ -75,25 +139,40 @@ export default function ProductsAdmin() {
       description: product?.description || '',
       heatNumber: product?.heatNumber || 1,
       price: product?.price || 590,
-      originalPrice: product?.originalPrice || undefined,
+      originalPrice: product?.originalPrice || undefined as number | undefined,
       volume: product?.volume || '150ml',
-      scoville: product?.scoville || undefined,
+      scoville: product?.scoville || undefined as number | undefined,
+      mainImage: product?.mainImage || '',
       ingredients: product?.ingredients?.join(', ') || '',
       pairings: product?.pairings?.join(', ') || '',
       featured: product?.featured || false,
       inStock: product?.inStock !== false,
+      stockCount: product?.stockCount || 0,
     })
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault()
-      
+
       const processedData = {
-        ...formData,
+        name: formData.name,
+        slug: product?.slug || formData.name.toLowerCase().replace(/[^a-z0-9šđčćž]+/g, '-').replace(/-+$/, ''),
+        blurb: formData.blurb,
+        description: formData.description,
+        heatNumber: formData.heatNumber,
+        heatLevel: ['mild', 'hot', 'extra-hot', 'smokin-hot'][formData.heatNumber - 1] || 'mild',
+        price: formData.price,
+        originalPrice: formData.originalPrice || null,
+        volume: formData.volume,
+        scoville: formData.scoville || null,
+        mainImage: formData.mainImage || null,
         ingredients: formData.ingredients.split(',').map(s => s.trim()).filter(Boolean),
         pairings: formData.pairings.split(',').map(s => s.trim()).filter(Boolean),
-        heatLevel: (['mild', 'hot', 'extra-hot', 'smokin-hot'][formData.heatNumber - 1] || 'mild') as any
+        featured: formData.featured,
+        inStock: formData.inStock,
+        stockCount: formData.stockCount,
+        categories: product?.categories || ['Ljuti sosovi'],
       }
-      
+
       onSave(processedData)
     }
 
@@ -103,9 +182,8 @@ export default function ProductsAdmin() {
           <h2 className="text-2xl font-bold text-white mb-6">
             {product ? 'Uredi proizvod' : 'Dodaj novi proizvod'}
           </h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Info */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-bold text-white mb-2">Naziv *</label>
@@ -119,7 +197,7 @@ export default function ProductsAdmin() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-white mb-2">Ljutina (1-6)</label>
+                <label className="block text-sm font-bold text-white mb-2">Ljutina (1-4)</label>
                 <select
                   value={formData.heatNumber}
                   onChange={(e) => setFormData(prev => ({ ...prev, heatNumber: parseInt(e.target.value) }))}
@@ -129,10 +207,28 @@ export default function ProductsAdmin() {
                   <option value={2}>2 - Ljuto</option>
                   <option value={3}>3 - Jako ljuto</option>
                   <option value={4}>4 - Pakleno</option>
-                  <option value={5}>5 - Ekstremno</option>
-                  <option value={6}>6 - Smrtonosno</option>
                 </select>
               </div>
+            </div>
+
+            {/* Product Image */}
+            <div>
+              <label className="block text-sm font-bold text-white mb-2">Slika proizvoda (URL ili putanja)</label>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={formData.mainImage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, mainImage: e.target.value }))}
+                  className="flex-1 rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white placeholder-white/50 focus:border-ember-500 focus:outline-none"
+                  placeholder="/uploads/products/ime-proizvoda.jpg"
+                />
+                {formData.mainImage && (
+                  <div className="h-12 w-12 rounded-lg border border-white/20 overflow-hidden flex-shrink-0">
+                    <img src={formData.mainImage} alt="Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-white/40">Lokalna putanja (npr. /uploads/products/gecko-mild.jpg) ili URL slike</p>
             </div>
 
             <div>
@@ -159,14 +255,13 @@ export default function ProductsAdmin() {
               />
             </div>
 
-            {/* Price & Details */}
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-bold text-white mb-2">Cena (RSD) *</label>
                 <input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
                   required
                   className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-ember-500 focus:outline-none"
                 />
@@ -181,7 +276,7 @@ export default function ProductsAdmin() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-white mb-2">Količina</label>
+                <label className="block text-sm font-bold text-white mb-2">Zapremina</label>
                 <input
                   type="text"
                   value={formData.volume}
@@ -192,15 +287,27 @@ export default function ProductsAdmin() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-white mb-2">Scoville jedinice</label>
-              <input
-                type="number"
-                value={formData.scoville || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, scoville: e.target.value ? parseInt(e.target.value) : undefined }))}
-                className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-ember-500 focus:outline-none"
-                placeholder="5000"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-bold text-white mb-2">Scoville jedinice</label>
+                <input
+                  type="number"
+                  value={formData.scoville || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, scoville: e.target.value ? parseInt(e.target.value) : undefined }))}
+                  className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-ember-500 focus:outline-none"
+                  placeholder="5000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-white mb-2">Komada na stanju</label>
+                <input
+                  type="number"
+                  value={formData.stockCount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, stockCount: parseInt(e.target.value) || 0 }))}
+                  className="w-full rounded-xl border border-white/20 bg-primary-950/50 px-4 py-3 text-white focus:border-ember-500 focus:outline-none"
+                  placeholder="50"
+                />
+              </div>
             </div>
 
             <div>
@@ -225,9 +332,8 @@ export default function ProductsAdmin() {
               />
             </div>
 
-            {/* Checkboxes */}
             <div className="flex gap-6">
-              <label className="flex items-center gap-2 text-white">
+              <label className="flex items-center gap-2 text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.featured}
@@ -236,7 +342,7 @@ export default function ProductsAdmin() {
                 />
                 Istakni na početnoj
               </label>
-              <label className="flex items-center gap-2 text-white">
+              <label className="flex items-center gap-2 text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.inStock}
@@ -247,13 +353,13 @@ export default function ProductsAdmin() {
               </label>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
-                className="flex-1 rounded-xl border-2 border-ember-500 bg-ember-500 py-3 font-bold uppercase tracking-[0.15em] text-white transition hover:-translate-y-1"
+                disabled={saving}
+                className="flex-1 rounded-xl border-2 border-ember-500 bg-ember-500 py-3 font-bold uppercase tracking-[0.15em] text-white transition hover:-translate-y-1 disabled:opacity-50"
               >
-                {product ? 'Sačuvaj izmene' : 'Dodaj proizvod'}
+                {saving ? 'Čuva se...' : product ? 'Sačuvaj izmene' : 'Dodaj proizvod'}
               </button>
               <button
                 type="button"
@@ -264,6 +370,17 @@ export default function ProductsAdmin() {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-ember-500" />
+          <p className="text-white/60">Učitavanje proizvoda...</p>
         </div>
       </div>
     )
@@ -309,6 +426,7 @@ export default function ProductsAdmin() {
                 <th className="text-left p-4 text-sm font-bold text-white/80">Proizvod</th>
                 <th className="text-left p-4 text-sm font-bold text-white/80">Ljutina</th>
                 <th className="text-left p-4 text-sm font-bold text-white/80">Cena</th>
+                <th className="text-left p-4 text-sm font-bold text-white/80">Stanje</th>
                 <th className="text-left p-4 text-sm font-bold text-white/80">Status</th>
                 <th className="text-right p-4 text-sm font-bold text-white/80">Akcije</th>
               </tr>
@@ -317,15 +435,26 @@ export default function ProductsAdmin() {
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-b border-white/5 hover:bg-white/5">
                   <td className="p-4">
-                    <div>
-                      <div className="font-bold text-white">{product.name}</div>
-                      <div className="text-sm text-white/60">{product.blurb}</div>
+                    <div className="flex items-center gap-3">
+                      {product.mainImage ? (
+                        <div className="h-12 w-12 rounded-lg border border-white/10 overflow-hidden flex-shrink-0">
+                          <img src={product.mainImage} alt={product.name} className="h-full w-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white/30 text-xs">Nema</span>
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-white">{product.name}</div>
+                        <div className="text-sm text-white/60">{product.blurb}</div>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-ember-500"></div>
-                      <span className="text-white/70">{product.heatNumber}/6</span>
+                      <span className="text-white/70">{product.heatNumber}/4</span>
                     </div>
                   </td>
                   <td className="p-4">
@@ -335,12 +464,15 @@ export default function ProductsAdmin() {
                     )}
                   </td>
                   <td className="p-4">
+                    <span className="text-white/70">{product.stockCount} kom</span>
+                  </td>
+                  <td className="p-4">
                     <div className="flex flex-col gap-1">
-                      <span className={`text-xs px-2 py-1 rounded-full ${product.inStock ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {product.inStock ? 'Na stanju' : 'Nema na stanju'}
+                      <span className={`text-xs px-2 py-1 rounded-full w-fit ${product.inStock ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {product.inStock ? 'Na stanju' : 'Nema'}
                       </span>
                       {product.featured && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                        <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 w-fit">
                           Istaknuto
                         </span>
                       )}
@@ -367,7 +499,7 @@ export default function ProductsAdmin() {
             </tbody>
           </table>
         </div>
-        
+
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-white/50">Nema proizvoda koji odgovaraju pretrazi</p>

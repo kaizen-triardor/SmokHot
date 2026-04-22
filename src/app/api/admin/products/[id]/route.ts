@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'smokin-hot-secret-key-change-in-production'
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
 function verifyToken(token: string): boolean {
   try {
@@ -49,8 +49,8 @@ export async function GET(
       blurb: product.blurb,
       heatLevel: product.heatLevel,
       heatNumber: product.heatNumber,
-      price: product.price / 100,
-      originalPrice: product.originalPrice ? product.originalPrice / 100 : null,
+      price: product.price,
+      originalPrice: product.originalPrice ?? null,
       volume: product.volume,
       scoville: product.scoville,
       inStock: product.inStock,
@@ -91,7 +91,8 @@ export async function PUT(
       blurb: body.blurb,
       heatLevel: body.heatLevel,
       heatNumber: body.heatNumber,
-      price: Math.round(body.price * 100),
+      price: Math.round(body.price),
+      mainImage: body.mainImage || null,
       volume: body.volume,
       scoville: body.scoville,
       inStock: body.inStock,
@@ -101,7 +102,7 @@ export async function PUT(
 
     // Handle optional fields
     if (body.originalPrice !== undefined) {
-      updateData.originalPrice = body.originalPrice ? Math.round(body.originalPrice * 100) : null
+      updateData.originalPrice = body.originalPrice ? Math.round(body.originalPrice) : null
     }
     
     if (body.ingredients !== undefined) {
@@ -124,8 +125,8 @@ export async function PUT(
     return NextResponse.json({
       id: product.id,
       ...body,
-      price: product.price / 100, // Return display format
-      originalPrice: product.originalPrice ? product.originalPrice / 100 : null,
+      price: product.price,
+      originalPrice: product.originalPrice ?? null,
       updatedAt: product.updatedAt.toISOString()
     })
 
