@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
                     className={`flex items-center gap-3 rounded-xl border-2 px-8 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000] disabled:opacity-50 ${
                       addedFeedback
                         ? 'border-mild-500 bg-mild-500'
-                        : 'border-ember-500 bg-ember-500'
+                        : 'border-fire-500 bg-fire-500'
                     }`}
                   >
                     <ShoppingBagIcon className="h-5 w-5" />

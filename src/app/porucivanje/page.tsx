@@ -288,7 +288,7 @@ Način plaćanja: Pouzeće (poštar)
             <p className="mb-8 text-white/70">Dodaj sosove u korpu pre poručivanja</p>
             <Link
               href="/shop"
-              className="inline-flex items-center justify-center border-2 border-ember-500 bg-ember-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1"
+              className="inline-flex items-center justify-center border-2 border-fire-500 bg-fire-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1"
             >
               Idi u shop
             </Link>
@@ -346,7 +346,7 @@ Način plaćanja: Pouzeće (poštar)
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 href="/"
-                className="flex-1 rounded-xl border-2 border-ember-500 bg-ember-500 py-3 text-center font-bold uppercase tracking-[0.15em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1"
+                className="flex-1 rounded-xl border-2 border-fire-500 bg-fire-500 py-3 text-center font-bold uppercase tracking-[0.15em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1"
               >
                 Početna
               </Link>
@@ -569,7 +569,7 @@ Način plaćanja: Pouzeće (poštar)
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full rounded-xl border-2 border-ember-500 bg-ember-500 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl border-2 border-fire-500 bg-fire-500 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Šalje se...' : 'Potvrdi porudžbinu'}
                   </button>

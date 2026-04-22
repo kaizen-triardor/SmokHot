@@ -4,14 +4,88 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { PlusIcon } from '@heroicons/react/24/outline'
 
-// Heat level configuration for visual progression
+// Heat level configuration for visual progression.
+// NOTE: Tailwind JIT only keeps complete class names, so each level hard-codes
+// every variant it needs (border, gradient stops, bg). Do NOT interpolate.
 const allHeatConfig = [
-  { level: 1, name: 'Blago', color: 'bg-mild-500', glow: 'shadow-[0_0_15px_rgba(152,184,60,0.3)]' },
-  { level: 2, name: 'Ljuto', color: 'bg-warning-500', glow: 'shadow-[0_0_20px_rgba(255,212,0,0.4)]' },
-  { level: 3, name: 'Jako ljuto', color: 'bg-ember-500', glow: 'shadow-[0_0_25px_rgba(255,106,0,0.5)]' },
-  { level: 4, name: 'Pakleno', color: 'bg-fire-500', glow: 'shadow-[0_0_30px_rgba(229,36,33,0.6)]' },
-  { level: 5, name: 'Ekstremno', color: 'bg-red-600', glow: 'shadow-[0_0_35px_rgba(220,38,127,0.7)]' },
-  { level: 6, name: 'Smrtonosno', color: 'bg-red-800', glow: 'shadow-[0_0_40px_rgba(153,27,27,0.8)]' },
+  {
+    level: 1,
+    name: 'Blago',
+    color: 'bg-mild-500',
+    border: 'border-mild-500/30',
+    gradFrom60: 'from-mild-500/60',
+    gradTo40: 'to-mild-500/40',
+    gradFrom40: 'from-mild-500/40',
+    gradTo20: 'to-mild-500/20',
+    gradFrom20: 'from-mild-500/20',
+    gradTo10: 'to-mild-500/10',
+    glow: 'shadow-[0_0_15px_rgba(152,184,60,0.3)]',
+  },
+  {
+    level: 2,
+    name: 'Ljuto',
+    color: 'bg-warning-500',
+    border: 'border-warning-500/30',
+    gradFrom60: 'from-warning-500/60',
+    gradTo40: 'to-warning-500/40',
+    gradFrom40: 'from-warning-500/40',
+    gradTo20: 'to-warning-500/20',
+    gradFrom20: 'from-warning-500/20',
+    gradTo10: 'to-warning-500/10',
+    glow: 'shadow-[0_0_20px_rgba(255,212,0,0.4)]',
+  },
+  {
+    level: 3,
+    name: 'Jako ljuto',
+    color: 'bg-ember-500',
+    border: 'border-ember-500/30',
+    gradFrom60: 'from-ember-500/60',
+    gradTo40: 'to-ember-500/40',
+    gradFrom40: 'from-ember-500/40',
+    gradTo20: 'to-ember-500/20',
+    gradFrom20: 'from-ember-500/20',
+    gradTo10: 'to-ember-500/10',
+    glow: 'shadow-[0_0_25px_rgba(255,106,0,0.5)]',
+  },
+  {
+    level: 4,
+    name: 'Pakleno',
+    color: 'bg-fire-500',
+    border: 'border-fire-500/30',
+    gradFrom60: 'from-fire-500/60',
+    gradTo40: 'to-fire-500/40',
+    gradFrom40: 'from-fire-500/40',
+    gradTo20: 'to-fire-500/20',
+    gradFrom20: 'from-fire-500/20',
+    gradTo10: 'to-fire-500/10',
+    glow: 'shadow-[0_0_30px_rgba(229,36,33,0.6)]',
+  },
+  {
+    level: 5,
+    name: 'Ekstremno',
+    color: 'bg-red-600',
+    border: 'border-red-600/30',
+    gradFrom60: 'from-red-600/60',
+    gradTo40: 'to-red-600/40',
+    gradFrom40: 'from-red-600/40',
+    gradTo20: 'to-red-600/20',
+    gradFrom20: 'from-red-600/20',
+    gradTo10: 'to-red-600/10',
+    glow: 'shadow-[0_0_35px_rgba(220,38,127,0.7)]',
+  },
+  {
+    level: 6,
+    name: 'Smrtonosno',
+    color: 'bg-red-800',
+    border: 'border-red-800/30',
+    gradFrom60: 'from-red-800/60',
+    gradTo40: 'to-red-800/40',
+    gradFrom40: 'from-red-800/40',
+    gradTo20: 'to-red-800/20',
+    gradFrom20: 'from-red-800/20',
+    gradTo10: 'to-red-800/10',
+    glow: 'shadow-[0_0_40px_rgba(153,27,27,0.8)]',
+  },
 ]
 
 // Short badge labels that fit inside the circle
@@ -65,7 +139,7 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
   }
 
   return (
-    <div className={`group relative rounded-3xl border-2 border-${heatConf.color}/30 bg-gradient-to-br from-surface to-primary-950 p-6 transition-all hover:-translate-y-2 hover:${heatConf.glow}`}>
+    <div className={`group relative rounded-3xl border-2 ${heatConf.border} bg-gradient-to-br from-surface to-primary-950 p-6 transition-all hover:-translate-y-2 hover:${heatConf.glow}`}>
       {/* Heat Badge */}
       <div className="absolute -right-3 -top-3">
         <div className={`${heatConf.color} flex h-16 w-16 items-center justify-center rounded-full text-[10px] font-black uppercase leading-tight tracking-[0.05em] text-white shadow-lg text-center`}>
@@ -83,10 +157,10 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
           />
         ) : (
           <div className="grid h-full grid-cols-2 gap-4 p-8">
-            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/60 to-${heatConf.color}/40`} />
-            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
-            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/40 to-${heatConf.color}/20`} />
-            <div className={`rounded-2xl bg-gradient-to-br from-${heatConf.color}/20 to-${heatConf.color}/10`} />
+            <div className={`rounded-2xl bg-gradient-to-br ${heatConf.gradFrom60} ${heatConf.gradTo40}`} />
+            <div className={`rounded-2xl bg-gradient-to-br ${heatConf.gradFrom40} ${heatConf.gradTo20}`} />
+            <div className={`rounded-2xl bg-gradient-to-br ${heatConf.gradFrom40} ${heatConf.gradTo20}`} />
+            <div className={`rounded-2xl bg-gradient-to-br ${heatConf.gradFrom20} ${heatConf.gradTo10}`} />
           </div>
         )}
       </div>
@@ -132,7 +206,7 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
           <button
             onClick={addToCart}
             disabled={isAdding}
-            className="flex items-center justify-center rounded-xl border-2 border-ember-500 bg-ember-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-ember-600 disabled:opacity-50"
+            className="flex items-center justify-center rounded-xl border-2 border-fire-500 bg-fire-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-fire-600 disabled:opacity-50"
           >
             <PlusIcon className="h-4 w-4 mr-1" />
             {isAdding ? 'Dodaje...' : 'U korpu'}

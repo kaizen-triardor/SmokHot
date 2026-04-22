@@ -90,6 +90,7 @@ export default function KorpaPage() {
   const DELIVERY_COST = 300
   const FREE_DELIVERY_THRESHOLD = 3000
 
+  // Heat level styling — Tailwind JIT requires complete class names (no template interpolation).
   const heatLevelColors = {
     1: 'bg-mild-500',
     2: 'bg-warning-500',
@@ -97,6 +98,15 @@ export default function KorpaPage() {
     4: 'bg-fire-500',
     5: 'bg-red-600',
     6: 'bg-red-800'
+  }
+
+  const heatGradients: Record<number, { top: string; bottom: string }> = {
+    1: { top: 'bg-gradient-to-br from-mild-500/60 to-mild-500/40', bottom: 'bg-gradient-to-br from-mild-500/40 to-mild-500/20' },
+    2: { top: 'bg-gradient-to-br from-warning-500/60 to-warning-500/40', bottom: 'bg-gradient-to-br from-warning-500/40 to-warning-500/20' },
+    3: { top: 'bg-gradient-to-br from-ember-500/60 to-ember-500/40', bottom: 'bg-gradient-to-br from-ember-500/40 to-ember-500/20' },
+    4: { top: 'bg-gradient-to-br from-fire-500/60 to-fire-500/40', bottom: 'bg-gradient-to-br from-fire-500/40 to-fire-500/20' },
+    5: { top: 'bg-gradient-to-br from-red-600/60 to-red-600/40', bottom: 'bg-gradient-to-br from-red-600/40 to-red-600/20' },
+    6: { top: 'bg-gradient-to-br from-red-800/60 to-red-800/40', bottom: 'bg-gradient-to-br from-red-800/40 to-red-800/20' },
   }
 
   if (loading) {
@@ -156,7 +166,7 @@ export default function KorpaPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                 <Link
                   href="/shop"
-                  className="inline-flex items-center justify-center border-2 border-ember-500 bg-ember-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
+                  className="inline-flex items-center justify-center border-2 border-fire-500 bg-fire-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
                 >
                   Istraži sosove
                 </Link>
@@ -195,19 +205,20 @@ export default function KorpaPage() {
                       if (!product) return null
 
                       const heatColor = heatLevelColors[product.heatNumber as keyof typeof heatLevelColors] || 'bg-ember-500'
+                      const grad = heatGradients[product.heatNumber as keyof typeof heatGradients] || heatGradients[3]
 
                       return (
                         <div
                           key={item.productId}
                           className="rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-6"
                         >
-                          <div className="flex gap-6">
+                          <div className="flex gap-4 sm:gap-6">
                             {/* Product Image Placeholder */}
                             <div className="flex-shrink-0">
-                              <div className="h-32 w-24 rounded-2xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-4">
+                              <div className="h-32 w-20 sm:w-24 rounded-2xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 p-3 sm:p-4">
                                 <div className="grid h-full grid-cols-1 gap-2">
-                                  <div className={`rounded-lg bg-gradient-to-br from-${heatColor}/60 to-${heatColor}/40`} />
-                                  <div className={`rounded-lg bg-gradient-to-br from-${heatColor}/40 to-${heatColor}/20`} />
+                                  <div className={`rounded-lg ${grad.top}`} />
+                                  <div className={`rounded-lg ${grad.bottom}`} />
                                 </div>
                               </div>
                             </div>
@@ -239,9 +250,9 @@ export default function KorpaPage() {
                                 </button>
                               </div>
 
-                              {/* Quantity & Price */}
-                              <div className="mt-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
+                              {/* Quantity & Price — stacks on small screens so price can't overflow */}
+                              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-3 sm:gap-4">
                                   <span className="text-sm font-bold text-white/70">Količina:</span>
                                   <div className="flex items-center gap-2">
                                     <button
@@ -260,11 +271,11 @@ export default function KorpaPage() {
                                   </div>
                                 </div>
 
-                                <div className="text-right">
-                                  <div className="text-sm font-bold uppercase tracking-[0.1em] text-white/50">
+                                <div className="text-left sm:text-right">
+                                  <div className="text-xs font-bold uppercase tracking-[0.1em] text-white/50">
                                     {item.quantity} x {product.price} RSD
                                   </div>
-                                  <div className="text-2xl font-black text-ember-500">
+                                  <div className="text-2xl font-black text-ember-500 whitespace-nowrap">
                                     {(product.price * item.quantity).toLocaleString()} RSD
                                   </div>
                                 </div>
@@ -332,7 +343,7 @@ export default function KorpaPage() {
                       {/* Checkout Button */}
                       <Link
                         href="/porucivanje"
-                        className="block w-full rounded-xl border-2 border-ember-500 bg-ember-500 py-4 text-center text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
+                        className="block w-full rounded-xl border-2 border-fire-500 bg-fire-500 py-4 text-center text-lg font-bold uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
                       >
                         Poruči
                       </Link>

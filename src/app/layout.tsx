@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Bebas_Neue } from 'next/font/google'
 import Header from '@/components/layout/Header'
+import Footer from '@/components/layout/Footer'
 import '@/styles/globals.css'
 
 const inter = Inter({ 
@@ -91,6 +92,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased min-h-screen bg-primary-950 text-white selection:bg-fire-500/70`}>
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   )

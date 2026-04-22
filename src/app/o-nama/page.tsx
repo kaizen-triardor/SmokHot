@@ -67,9 +67,9 @@ export default function ONamaPage() {
               </div>
               
               {/* Floating badge */}
-              <div className="absolute -right-4 -top-4 rounded-2xl border-2 border-ember-500 bg-black px-4 py-2">
-                <span className="text-sm font-black uppercase tracking-[0.1em] text-ember-500">
-                  Est. 2024
+              <div className="absolute -right-4 -top-4 rounded-2xl border-2 border-fire-500 bg-black px-4 py-2">
+                <span className="text-sm font-black uppercase tracking-[0.1em] text-fire-500">
+                  Handmade
                 </span>
               </div>
             </div>
@@ -233,7 +233,7 @@ export default function ONamaPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
             <a
               href="/shop"
-              className="inline-flex items-center justify-center border-2 border-ember-500 bg-ember-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.1em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1"
+              className="inline-flex items-center justify-center border-2 border-fire-500 bg-fire-500 px-8 py-4 text-lg font-bold uppercase tracking-[0.1em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1"
             >
               Istraži shop
             </a>

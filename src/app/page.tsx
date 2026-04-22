@@ -178,9 +178,7 @@ export default function HomePage() {
     { name: "Burger", emoji: "🍔", product: "Fireant Hot" },
     { name: "Roštilj", emoji: "🥩", product: "Jackal Smokin' Hot" },
     { name: "Pizza", emoji: "🍕", product: "Firefly Extra Hot" },
-    { name: "Krilca", emoji: "🍗", product: "Fireant Hot" },
-    { name: "Tortilje", emoji: "🌯", product: "Gecko Mild" },
-    { name: "Pasulj", emoji: "🫘", product: "Gecko Mild" }
+    { name: "Krilca", emoji: "🍗", product: "Fireant Hot" }
   ]
 
   return (
@@ -410,7 +408,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {foodPairings.map((item, i) => {
             const matchedProduct = heatScaleProducts.find(p => p.name.includes(item.product.split(' ')[0]))
             return (
@@ -426,9 +424,6 @@ export default function HomePage() {
                 <p className="mt-2 text-sm leading-6 text-white/65">
                   Najbolje sa <span className="font-bold text-[#ffd400]">{item.product}</span>
                 </p>
-                <div className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-white/45">
-                  Klikni za dodavanje u korpu
-                </div>
               </div>
             )
           })}
@@ -559,7 +554,7 @@ export default function HomePage() {
           <div className="mt-8 text-center">
             <Link
               href="/kontakt"
-              className="inline-flex items-center justify-center border-2 border-ember-500 bg-ember-500 px-8 py-4 text-lg font-black uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
+              className="inline-flex items-center justify-center border-2 border-fire-500 bg-fire-500 px-8 py-4 text-lg font-black uppercase tracking-[0.15em] text-white shadow-[6px_6px_0_0_#000] transition hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000]"
             >
               Pozovi nas za svoj dogadjaj
             </Link>

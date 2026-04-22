@@ -55,7 +55,7 @@ export default function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/8 bg-primary-950/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-white/8 bg-primary-950/95">
       <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
         {/* Logo */}
         <div className="flex lg:flex-1">
@@ -127,9 +127,14 @@ export default function Header() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden">
-            <div className="fixed inset-0 z-50" />
-            <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-primary-950 px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10">
+          <div className="lg:hidden" role="dialog" aria-modal="true">
+            {/* Dismissible scrim so the drawer has visible contrast against the page */}
+            <div
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto border-l-2 border-fire-500/40 bg-[#111113] px-6 py-6 shadow-2xl sm:max-w-sm sm:ring-1 sm:ring-white/10">
               <div className="flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-3 -m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-warning-400 bg-black/20 p-1">

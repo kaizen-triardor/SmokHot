@@ -299,7 +299,7 @@ export default function KontaktPage() {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full border-2 border-ember-500 bg-ember-500 px-6 py-4 font-bold uppercase tracking-[0.1em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full border-2 border-fire-500 bg-fire-500 px-6 py-4 font-bold uppercase tracking-[0.1em] text-white shadow-[4px_4px_0_0_#000] transition hover:-translate-y-1 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSubmitting ? 'Šalje se...' : 'Pošaljite poruku'}
                       </button>
