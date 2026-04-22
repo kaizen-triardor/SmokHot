@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -86,6 +87,8 @@ export async function PUT(
       }
     })
 
+    refreshSnapshotAsync('turneja')
+
     return NextResponse.json({
       id: event.id,
       title: event.title,
@@ -119,6 +122,8 @@ export async function DELETE(
     await prisma.tourEvent.delete({
       where: { id: params.id }
     })
+
+    refreshSnapshotAsync('turneja')
 
     return NextResponse.json({ message: 'Event deleted' })
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -61,6 +62,8 @@ export async function PUT(request: NextRequest) {
       update: { value: String(value) },
       create: { key, value: String(value) }
     })
+
+    refreshSnapshotAsync('settings')
 
     return NextResponse.json(setting)
   } catch (error) {

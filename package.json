@@ -12,7 +12,10 @@
     "db:push": "npx prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "npx prisma studio",
-    "db:migrate-to-pg": "cp prisma/schema.postgresql.prisma prisma/schema.prisma && npx prisma generate && npx prisma db push && npm run db:seed"
+    "db:migrate-to-pg": "cp prisma/schema.postgresql.prisma prisma/schema.prisma && npx prisma generate && npx prisma db push && npm run db:seed",
+    "snapshots:seed": "npx tsx scripts/seed-snapshots.ts",
+    "snapshots:test": "npx tsx scripts/test-warm-serve.ts",
+    "postbuild": "npx tsx scripts/seed-snapshots.ts || echo 'snapshot seed skipped (DB unreachable at build time)'"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -74,6 +75,8 @@ export async function PUT(
       }
     })
 
+    refreshSnapshotAsync('gallery')
+
     return NextResponse.json(image)
 
   } catch (error) {
@@ -96,6 +99,8 @@ export async function DELETE(
     await prisma.galleryImage.delete({
       where: { id: params.id }
     })
+
+    refreshSnapshotAsync('gallery')
 
     return NextResponse.json({ message: 'Image deleted' })
 

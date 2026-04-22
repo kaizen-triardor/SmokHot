@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
         sortOrder: body.sortOrder ?? 0,
       }
     })
+
+    refreshSnapshotAsync('gallery')
 
     return NextResponse.json(image)
 

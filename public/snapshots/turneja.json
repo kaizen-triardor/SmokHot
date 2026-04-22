@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "id": "cmo9xe2kw00014vq43eof47hc",
+      "title": "Beogradska pijaca",
+      "location": "Kalenic",
+      "date": "2026-04-06T00:00:00.000Z",
+      "time": "22:00-03:00",
+      "status": "past",
+      "highlight": "Prodali smo ceo invertar za 4h",
+      "description": "Bilo nam je super",
+      "createdAt": "2026-04-22T10:44:25.617Z",
+      "updatedAt": "2026-04-22T10:44:25.617Z"
+    },
+    {
+      "id": "cmmyv5wqi0001wlnkbs3xchey",
+      "title": "Nocni Market",
+      "location": "Pijaca Blok 45",
+      "date": "2026-04-04T00:00:00.000Z",
+      "time": "22:00-00:00",
+      "status": "upcoming",
+      "highlight": null,
+      "description": "Pronadjite nas na nocnom marketu",
+      "createdAt": "2026-03-20T12:16:55.290Z",
+      "updatedAt": "2026-03-20T12:16:55.290Z"
+    }
+  ],
+  "savedAt": "2026-04-22T11:52:55.058Z"
+}

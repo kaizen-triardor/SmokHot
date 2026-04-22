@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Bebas_Neue } from 'next/font/google'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import WarmupOverlay from '@/components/ui/WarmupOverlay'
 import '@/styles/globals.css'
 
 const inter = Inter({ 
@@ -90,6 +91,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className={`${inter.className} antialiased min-h-screen bg-primary-950 text-white selection:bg-fire-500/70`}>
+        <WarmupOverlay />
         <Header />
         {children}
         <Footer />

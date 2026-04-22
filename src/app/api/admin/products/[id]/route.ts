@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { refreshSnapshotAsync } from '@/lib/refresh-snapshot'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || ''
 
@@ -122,6 +123,8 @@ export async function PUT(
       data: updateData
     })
 
+    refreshSnapshotAsync('products')
+
     return NextResponse.json({
       id: product.id,
       ...body,
@@ -150,6 +153,8 @@ export async function DELETE(
     await prisma.product.delete({
       where: { id: params.id }
     })
+
+    refreshSnapshotAsync('products')
 
     return NextResponse.json({ message: 'Product deleted' })
 
