@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3040",
-    "build": "next build",
+    "build": "if [ \"$VERCEL\" = \"1\" ] || [ \"$USE_POSTGRES\" = \"1\" ]; then cp prisma/schema.postgresql.prisma prisma/schema.prisma; fi && npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",

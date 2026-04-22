@@ -4,5 +4,10 @@
       "path": "/api/health",
       "schedule": "0 4 */6 * *"
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "USE_POSTGRES": "1"
+    }
+  }
 }

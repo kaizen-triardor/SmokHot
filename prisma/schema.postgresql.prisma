@@ -1,12 +1,12 @@
-// Smokin' Hot CMS Database Schema — PostgreSQL (Supabase)
+// Smokin' Hot CMS Database Schema
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Supabase requires this for migrations
+  directUrl = env("DIRECT_URL")
+  url      = env("DATABASE_URL")
 }
 
 // Product Management
@@ -15,32 +15,45 @@ model Product {
   name        String
   slug        String   @unique
   description String
-  blurb       String
-  heatLevel   String
-  heatNumber  Int
-  price       Int
-  originalPrice Int?
-
+  blurb       String   // Short marketing description
+  heatLevel   String   // 'mild', 'hot', 'extra-hot', 'smokin-hot'
+  heatNumber  Int      // 1-4 scale
+  price       Int      // In RSD (as cents for precision)
+  originalPrice Int?   // For sale pricing
+  
+  // Images (stored as JSON paths)
   mainImage     String?
-  galleryImages String?
+  galleryImages String? // JSON array of paths
   thumbnail     String?
-
-  ingredients   String?
+  
+  // Product Details
+  ingredients   String? // JSON array
   volume        String  @default("150ml")
   scoville      Int?
-  pairings      String?
-
+  pairings      String? // JSON array of food recommendations
+  
+  // Inventory
   inStock     Boolean @default(true)
   stockCount  Int     @default(0)
   featured    Boolean @default(false)
-
-  categories  String?
-
+  
+  // Categories
+  categories  String? // JSON array
+  
+  // Nutrition (optional)
   calories    Int?
   fat         Float?
   carbs       Float?
   protein     Float?
   sodium      Int?
+  
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoOgImage     String?
+
+  // Soft delete — keeps historical orders readable
+  deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -51,12 +64,12 @@ model Product {
 // Content Management
 model Content {
   id        String   @id @default(cuid())
-  key       String   @unique
-  title     String
-  content   String
-  type      String
-  section   String
-
+  key       String   @unique // e.g., 'hero_title', 'about_text', 'contact_info'
+  title     String   // Human-readable name
+  content   String   // The actual content (text/HTML/JSON)
+  type      String   // 'text', 'html', 'json', 'image'
+  section   String   // 'hero', 'about', 'contact', 'global'
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -66,24 +79,29 @@ model Content {
 // Order Management (COD focused)
 model Order {
   id          String   @id @default(cuid())
-  orderNumber String   @unique
-
+  orderNumber String   @unique // Human-readable order ID
+  
+  // Customer Info
   customerName    String
   customerPhone   String
   customerAddress String
   notes           String?
-
-  items       String
-  totalAmount Int
-
-  status      String  @default("pending")
-
+  
+  // Order Details
+  items       String  // JSON array of ordered items
+  totalAmount Int     // Total in RSD (as cents)
+  
+  // Status Management
+  status      String  @default("pending") // 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'
+  
+  // Delivery Info
   shippingCost    Int @default(0)
   estimatedDelivery DateTime?
   trackingNumber  String?
-
+  
+  // Internal Notes
   adminNotes  String?
-
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -95,9 +113,12 @@ model Admin {
   id       String @id @default(cuid())
   email    String @unique
   name     String
-  password String
-  role     String @default("admin")
+  password String // Hashed with bcrypt
+  role     String @default("admin") // 'admin', 'super_admin'
   active   Boolean @default(true)
+
+  lastLoginAt DateTime?
+  passwordChangedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -110,12 +131,20 @@ model BlogPost {
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
-  content     String
-  excerpt     String
-  coverImage  String?
+  content     String   // HTML (sanitized at write time via DOMPurify)
+  excerpt     String   // Short preview text
+  coverImage  String?  // Image URL/path
   published   Boolean  @default(false)
   author      String   @default("SmokHot")
-  tags        String?
+  tags        String?  // JSON array of tags
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoOgImage     String?
+
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -128,7 +157,7 @@ model GalleryImage {
   title       String
   description String?
   imageUrl    String
-  category    String   @default("general")
+  category    String   @default("general") // 'events', 'products', 'customers', 'food'
   featured    Boolean  @default(false)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
@@ -137,14 +166,51 @@ model GalleryImage {
   @@map("gallery_images")
 }
 
+// Tour Events (Turneja)
+model TourEvent {
+  id          String   @id @default(cuid())
+  title       String
+  location    String
+  date        DateTime
+  time        String   // e.g., "09:00 - 15:00"
+  status      String   @default("upcoming") // 'upcoming', 'past', 'cancelled'
+  highlight   String?  // Summary of past event
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tour_events")
+}
+
 // Settings Management
 model Setting {
   id    String @id @default(cuid())
   key   String @unique
-  value String
+  value String // JSON for complex settings
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// Audit Log — records admin actions for accountability
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String   // FK-like reference to admin
+  adminEmail  String   // denormalized so log remains readable after admin delete
+  action      String   // 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PASSWORD_CHANGE'
+  resource    String   // 'product', 'order', 'blog', 'gallery', 'turneja', 'settings', 'admin'
+  resourceId  String?  // the affected row id (when applicable)
+  summary     String?  // short human-readable description
+  metadata    String?  // JSON blob with before/after or extra fields
+  ip          String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([adminId])
+  @@index([resource])
+  @@map("audit_logs")
 }
