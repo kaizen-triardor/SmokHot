@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { FireIcon, HomeIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 
 export default function NotFound() {

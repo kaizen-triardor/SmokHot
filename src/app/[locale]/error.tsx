@@ -5,7 +5,7 @@
  * the root segment (e.g. DB genuinely down AND all warm-serve layers miss).
  */
 import { useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline'
 
 export default function GlobalError({

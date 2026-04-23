@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { PlusIcon } from '@heroicons/react/24/outline'
 
 // Heat level configuration for visual progression.

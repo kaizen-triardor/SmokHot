@@ -1,31 +1,33 @@
 'use client'
 
-import Link from 'next/link'
+import { Link, usePathname } from '@/i18n/navigation'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { EnvelopeIcon, PhoneIcon, TruckIcon, CreditCardIcon } from '@heroicons/react/24/outline'
-
-const primaryNav = [
-  { name: 'Shop', href: '/shop' },
-  { name: 'Blog', href: '/blog' },
-  { name: 'Galerija', href: '/galerija' },
-  { name: 'O Nama', href: '/o-nama' },
-  { name: 'Kontakt', href: '/kontakt' },
-]
-
-const legalNav = [
-  { name: 'Politika privatnosti', href: '/politika-privatnosti' },
-  { name: 'Uslovi korišćenja', href: '/uslovi-koriscenja' },
-  { name: 'Reklamacije', href: '/uslovi-koriscenja#reklamacije' },
-  { name: 'Dostava i plaćanje', href: '/uslovi-koriscenja#dostava' },
-]
 
 export default function Footer() {
   const year = new Date().getFullYear()
   const pathname = usePathname()
+  const tNav = useTranslations('Nav')
+  const tFooter = useTranslations('Footer')
 
   // Public footer never renders on admin routes.
   if (pathname?.startsWith('/admin')) return null
+
+  const primaryNav = [
+    { key: 'shop', label: tNav('shop'), href: '/shop' },
+    { key: 'blog', label: tNav('blog'), href: '/blog' },
+    { key: 'galerija', label: tNav('galerija'), href: '/galerija' },
+    { key: 'oNama', label: tNav('oNama'), href: '/o-nama' },
+    { key: 'kontakt', label: tNav('kontakt'), href: '/kontakt' },
+  ] as const
+
+  const legalNav = [
+    { key: 'privacy', label: tFooter('linkPrivacy'), href: '/politika-privatnosti' },
+    { key: 'terms', label: tFooter('linkTerms'), href: '/uslovi-koriscenja' },
+    { key: 'complaints', label: tFooter('linkComplaints'), href: '/uslovi-koriscenja' },
+    { key: 'delivery', label: tFooter('linkDelivery'), href: '/uslovi-koriscenja' },
+  ] as const
 
   return (
     <footer className="relative z-10 mt-20 border-t border-white/10 bg-[#0b0b0d]">
@@ -54,24 +56,23 @@ export default function Footer() {
               </div>
             </Link>
             <p className="mt-4 text-sm leading-6 text-white/60">
-              Srpski ljuti sosovi za one koji se ne plaše vatre. Ručno pravljeni,
-              dostava pouzećem širom Srbije.
+              {tFooter('tagline')}
             </p>
           </div>
 
           {/* Primary nav */}
           <div>
             <h3 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-warning-400">
-              Navigacija
+              {tFooter('sectionNav')}
             </h3>
             <ul className="space-y-2 text-sm">
               {primaryNav.map((item) => (
-                <li key={item.name}>
+                <li key={item.key}>
                   <Link
-                    href={item.href as any}
+                    href={item.href}
                     className="text-white/70 transition hover:text-white"
                   >
-                    {item.name}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -81,16 +82,16 @@ export default function Footer() {
           {/* Legal */}
           <div>
             <h3 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-warning-400">
-              Informacije
+              {tFooter('sectionInfo')}
             </h3>
             <ul className="space-y-2 text-sm">
               {legalNav.map((item) => (
-                <li key={item.name}>
+                <li key={item.key}>
                   <Link
-                    href={item.href as any}
+                    href={item.href}
                     className="text-white/70 transition hover:text-white"
                   >
-                    {item.name}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -100,7 +101,7 @@ export default function Footer() {
           {/* Contact + trust */}
           <div>
             <h3 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-warning-400">
-              Kontakt
+              {tFooter('sectionContact')}
             </h3>
             <ul className="space-y-3 text-sm text-white/70">
               <li className="flex items-start gap-2">
@@ -117,11 +118,11 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <TruckIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-fire-500" aria-hidden="true" />
-                <span>Dostava 1–3 radna dana</span>
+                <span>{tFooter('deliveryLine')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <CreditCardIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-fire-500" aria-hidden="true" />
-                <span>Plaćanje pouzećem</span>
+                <span>{tFooter('paymentLine')}</span>
               </li>
             </ul>
 
@@ -168,15 +169,13 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/50 md:flex-row md:items-center md:justify-between">
-          <div>
-            © {year} SmokinHot Collective · Srednjokrajska 23D, Barajevo, 11000 Beograd · Sva prava zadržana.
-          </div>
+          <div>{tFooter('bottomCopyright', { year })}</div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="uppercase tracking-[0.2em]">Made in Serbia</span>
+            <span className="uppercase tracking-[0.2em]">{tFooter('badgeMadeIn')}</span>
             <span className="text-white/20">·</span>
-            <span className="uppercase tracking-[0.2em]">Handcrafted</span>
+            <span className="uppercase tracking-[0.2em]">{tFooter('badgeHandcrafted')}</span>
             <span className="text-white/20">·</span>
-            <span className="uppercase tracking-[0.2em]">COD</span>
+            <span className="uppercase tracking-[0.2em]">{tFooter('badgeCOD')}</span>
           </div>
         </div>
       </div>
