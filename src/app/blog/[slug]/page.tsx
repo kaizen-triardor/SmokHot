@@ -142,7 +142,7 @@ export default function BlogPostPage() {
         {post.coverImage && (
           <div className="mx-auto max-w-4xl px-6 -mb-8">
             <div className="overflow-hidden rounded-3xl border border-white/10 -mt-8">
-              <img
+              <img loading="lazy" decoding="async"
                 src={post.coverImage}
                 alt={post.title}
                 className="w-full h-auto object-cover"

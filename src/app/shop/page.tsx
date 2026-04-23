@@ -151,7 +151,7 @@ function ProductCard({ product, heatConfig }: { product: any; heatConfig: typeof
       {/* Product Image */}
       <div className="mb-6 aspect-square rounded-2xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 overflow-hidden">
         {product.mainImage ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={product.mainImage}
             alt={product.name}
             className="h-full w-full object-cover transition-transform group-hover:scale-105"

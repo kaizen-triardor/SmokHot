@@ -170,7 +170,7 @@ export default function ProductDetailPage() {
                 <div className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-surface to-primary-950 relative overflow-hidden">
                   {/* Product Image (heat badge shown only in the right info panel to avoid duplication) */}
                   {product.mainImage ? (
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={product.mainImage}
                       alt={product.name}
                       className="h-full w-full object-cover"

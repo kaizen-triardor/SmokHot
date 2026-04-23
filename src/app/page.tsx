@@ -350,7 +350,7 @@ export default function HomePage() {
           {/* Visual */}
           <div className="relative rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1d1d21] to-[#0d0d0f] p-8 flex items-center justify-center">
             <div className="relative">
-              <img
+              <img loading="lazy" decoding="async"
                 src="/SmokHotLogo.png"
                 alt="SmokHot Collective Logo"
                 width="280"

@@ -137,7 +137,7 @@ export default function GalerijaPage() {
                     >
                       <div className={`rounded-3xl border border-white/10 overflow-hidden transition hover:border-ember-500/50 hover:-translate-y-1`}>
                         {image.imageUrl ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={image.imageUrl}
                             alt={image.title}
                             className={`w-full ${heightClass} object-cover`}
@@ -193,7 +193,7 @@ export default function GalerijaPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {selectedImage.imageUrl ? (
-              <img
+              <img loading="lazy" decoding="async"
                 src={selectedImage.imageUrl}
                 alt={selectedImage.title}
                 className="w-full max-h-[60vh] object-contain bg-black"

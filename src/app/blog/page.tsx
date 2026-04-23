@@ -103,7 +103,7 @@ export default function BlogPage() {
                       {/* Cover Image Area */}
                       <div className="h-48 bg-gradient-to-br from-ember-500/20 to-fire-500/10 flex items-center justify-center">
                         {post.coverImage ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={post.coverImage}
                             alt={post.title}
                             className="w-full h-full object-cover"

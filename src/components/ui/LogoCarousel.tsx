@@ -60,7 +60,7 @@ export default function LogoCarousel({
             className="min-w-full flex items-center justify-center"
           >
             <div className="relative">
-              <img
+              <img loading="lazy" decoding="async"
                 src={slide.src}
                 alt={slide.alt}
                 width="280"

@@ -82,7 +82,7 @@ export default function ImageUpload({
         <div className="flex items-start gap-3">
           <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl border border-white/15 bg-black">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <img loading="lazy" decoding="async"
               src={value}
               alt="preview"
               className="h-full w-full object-cover"

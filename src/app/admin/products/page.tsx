@@ -487,7 +487,7 @@ export default function ProductsAdmin() {
                     <div className="flex items-center gap-3">
                       {product.mainImage ? (
                         <div className="h-12 w-12 rounded-lg border border-white/10 overflow-hidden flex-shrink-0">
-                          <img src={product.mainImage} alt={product.name} className="h-full w-full object-cover" />
+                          <img loading="lazy" decoding="async" src={product.mainImage} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                       ) : (
                         <div className="h-12 w-12 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0">

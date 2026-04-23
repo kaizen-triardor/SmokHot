@@ -233,7 +233,7 @@ export default function AdminGalerijaPage() {
               {/* Image Preview */}
               {image.imageUrl ? (
                 <div className="h-40 overflow-hidden">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={image.imageUrl}
                     alt={image.title}
                     className="w-full h-full object-cover"
