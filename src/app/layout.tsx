@@ -5,6 +5,24 @@ import Footer from '@/components/layout/Footer'
 import WarmupOverlay from '@/components/ui/WarmupOverlay'
 import '@/styles/globals.css'
 
+// Early DNS+TLS handshake to Supabase Storage host so the first product/blog
+// image fetch doesn't pay connection setup cost. No-op when env is missing.
+function SupabasePreconnect() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_PROJECT_URL
+  if (!raw) return null
+  try {
+    const host = new URL(raw).origin
+    return (
+      <>
+        <link rel="preconnect" href={host} crossOrigin="" />
+        <link rel="dns-prefetch" href={host} />
+      </>
+    )
+  } catch {
+    return null
+  }
+}
+
 const inter = Inter({ 
   subsets: ['latin', 'latin-ext'],
   display: 'swap',
@@ -89,6 +107,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <SupabasePreconnect />
       </head>
       <body className={`${inter.className} antialiased min-h-screen bg-primary-950 text-white selection:bg-fire-500/70`}>
         <WarmupOverlay />
