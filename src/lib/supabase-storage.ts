@@ -55,7 +55,9 @@ export async function uploadToSupabaseStorage(
 
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, buffer, {
     contentType,
-    cacheControl: '31536000',
+    // Content-addressed filenames (SHA256 hash) never change per byte-sequence,
+    // so `immutable` is safe: browsers/CDN never revalidate. 1 year TTL.
+    cacheControl: '31536000, immutable',
     upsert: true,
   })
   if (error) throw error
