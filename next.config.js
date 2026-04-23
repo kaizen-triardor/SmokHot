@@ -1,3 +1,5 @@
+const createNextIntlPlugin = require('next-intl/plugin')
+
 // Scope Supabase Storage host to the configured project when available;
 // fall back to the public Supabase domain otherwise. Uses `remotePatterns`
 // (non-legacy) with a path filter so only public-bucket objects pass.
@@ -6,6 +8,9 @@ const supabaseHost = (() => {
   if (!raw) return '*.supabase.co'
   try { return new URL(raw).host } catch { return '*.supabase.co' }
 })()
+
+// next-intl plugin reads request config from src/i18n/request.ts at build time.
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -40,4 +45,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)
