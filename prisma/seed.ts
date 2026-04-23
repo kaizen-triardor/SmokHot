@@ -27,7 +27,7 @@ async function main() {
     {
       name: 'Gecko Mild',
       slug: 'gecko-mild',
-      mainImage: '/uploads/products/gecko-mild.jpg',
+      mainImage: '/uploads/products/gecko-mild.webp',
       description: 'Naš najblaži sos koji uvodi u svet Smokin\' Hot ukusa. Kombinacija dimljenih paprika, belog luka i mediteranskih začina stvara savršenu bazu za one koji tek počinju putovanje kroz ljutinu.',
       blurb: 'Pitom start sa dimom, belim lukom i karakterom.',
       heatLevel: 'mild',
@@ -46,7 +46,7 @@ async function main() {
     {
       name: 'Fireant Hot',
       slug: 'fireant-hot',
-      mainImage: '/uploads/products/fireant-hot.jpg',
+      mainImage: '/uploads/products/fireant-hot.webp',
       description: 'Savršena ravnoteža između ukusa i toplote. Fireant kombinuje sočne crvene paprike sa notama dima i začina koji dopunjuju, a ne potiskuju hranu.',
       blurb: 'Za burgere, krilca i ekipu koja voli da pecka.',
       heatLevel: 'hot',
@@ -66,7 +66,7 @@ async function main() {
     {
       name: 'Firefly Extra Hot',
       slug: 'firefly-extra-hot',
-      mainImage: '/uploads/products/firefly-extra-hot.jpg',
+      mainImage: '/uploads/products/firefly-extra-hot.webp',
       description: 'Ovde se razdvajaju deca od odraslih. Firefly donosi ozbiljnu dozu toplote uz neverovatnu složenost ukusa. Voćne note mangoa i ananasa ublažavaju intenzitet habanero paprika.',
       blurb: 'Voćna vatra koja udara brzo i ostaje dugo.',
       heatLevel: 'extra-hot',
@@ -85,7 +85,7 @@ async function main() {
     {
       name: 'Jackal Smokin\' Hot',
       slug: 'jackal-smokin-hot',
-      mainImage: '/uploads/products/jackal-smokin-hot.jpg',
+      mainImage: '/uploads/products/jackal-smokin-hot.webp',
       description: 'Ovo nije sos - ovo je ispitivanje granica. Jackal je naša najjača kreacija, napravljena od Carolina Reaper paprika i Ghost peppera. Sos koji zahteva poštovanje.',
       blurb: 'Brutalan finiš za one koji traže haos, ne sos.',
       heatLevel: 'smokin-hot',
@@ -104,7 +104,7 @@ async function main() {
     {
       name: 'Smoke & Mirrors BBQ',
       slug: 'smoke-mirrors-bbq',
-      mainImage: '/uploads/products/smoke-mirrors-bbq.jpg',
+      mainImage: '/uploads/products/smoke-mirrors-bbq.webp',
       description: 'Naš jedini ne-ljuti sos koji ipak ima karakter. Kombinacija hickory dima, tamnog šećera i balkanske tradicije u modernom ruhu. Savršen za mariniranje mesa.',
       blurb: 'Dim bez vatre - ukus bez granica.',
       heatLevel: 'mild',
@@ -123,7 +123,7 @@ async function main() {
     {
       name: 'Green Fury',
       slug: 'green-fury',
-      mainImage: '/uploads/products/green-fury.jpg',
+      mainImage: '/uploads/products/green-fury.webp',
       description: 'Jedini zeleni sos u našoj kolekciji donosi svežest i oštru ljutinu serrano paprika. Kombinovan sa svežim začinskim biljem i lajmom.',
       blurb: 'Zelena bes sa svežim notama lajma.',
       heatLevel: 'hot',
